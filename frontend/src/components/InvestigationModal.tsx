@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import type { Alert, ChangeEvent } from '../types';
 import { 
-  ShieldAlert, X, CheckCircle, Trees, 
-  Truck, FileCheck, Eye, Layers, Box, Check
+  ShieldAlert, X, CheckCircle, 
+  Truck, Eye, Layers, Box, Compass, Flame
 } from 'lucide-react';
 
 interface InvestigationModalProps {
@@ -25,17 +25,18 @@ export const InvestigationModal: React.FC<InvestigationModalProps> = ({
   const [verified, setVerified] = useState(alert?.investigation_status === 'FIELD_VERIFICATION');
 
   const riskScore = alert?.risk_score || changeEvent?.risk_score || 91;
+  const confidence = (alert as unknown as { confidence?: number })?.confidence || (changeEvent as unknown as { confidence?: number })?.confidence || 95;
   const forestName = alert?.forest_name || changeEvent?.forest_name || 'Nilgiri Biosphere Reserve (Zone A)';
   const areaHa = changeEvent?.affected_area_ha || 2.73;
   const vegLossPct = changeEvent?.polygons[0]?.veg_loss_pct || 59.2;
 
   const factors = alert?.explainable_factors || [
-    "Significant vegetation loss (59.2% drop)",
-    "Persistent clearing area (2.73 ha extracted polygon)",
-    "High-risk historical zone (8 prior incidents nearby)",
-    "Vehicle operating within 2.3 km of clearing centroid",
-    "No registered timber transport permit found",
-    "Suspicious route heading to unregistered warehouse"
+    "+27 Forest disturbance severity (59.2% vegetation loss candidate)",
+    "+18 Vegetation density loss (2.73 ha extracted polygon)",
+    "+20 Permit anomaly (No registered transport permit in registry)",
+    "+14 Route anomaly (Route leads to unregistered destination)",
+    "+8 Historical hotspot (8 prior unauthorized incidents)",
+    "+4 Spatial proximity (Vehicle within 2.3 km of clearing centroid)"
   ];
 
   const handleMark = () => {
@@ -46,194 +47,196 @@ export const InvestigationModal: React.FC<InvestigationModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="gis-glass w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-2xl border border-red-900/60 shadow-2xl shadow-red-950/40">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-md animate-in fade-in duration-200">
+      <div className="pushpa-panel w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-2xl border border-[#8E2B18] shadow-2xl shadow-red-950/80">
         
-        {/* Header Bar */}
-        <div className="flex items-center justify-between border-b border-slate-800 bg-slate-900/90 px-6 py-4">
-          <div className="flex items-center space-x-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-600/20 border border-red-500/40 text-red-400">
+        {/* Cinematic Header Bar */}
+        <div className="flex items-center justify-between border-b border-[#4A3022] bg-[#14100C]/95 px-6 py-4">
+          <div className="flex items-center space-x-3.5">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#5C160F]/60 border border-[#D52B1E]/60 text-[#D52B1E] shadow-lg shadow-[#8E2B18]/40">
               <ShieldAlert className="h-6 w-6 animate-pulse" />
             </div>
             <div>
-              <div className="flex items-center space-x-2">
-                <h2 className="text-lg font-black tracking-wider text-slate-100">
-                  INVESTIGATION CASE #{changeEvent?.id || 'CHG001'}
+              <div className="flex items-center space-x-2.5">
+                <h2 className="font-title text-base sm:text-lg font-black tracking-wider text-[#F1E7D5]">
+                  INVESTIGATION DOSSIER #{changeEvent?.id || 'CHG001'}
                 </h2>
-                <span className="rounded bg-red-950 px-2.5 py-0.5 text-xs font-black text-red-400 border border-red-800">
-                  🔴 CRITICAL INVESTIGATION PRIORITY
+                <span className="rounded bg-[#5C160F] px-2.5 py-0.5 text-xs font-tactical font-black text-[#F1E7D5] border border-[#D52B1E]">
+                  CRITICAL INVESTIGATION PRIORITY
                 </span>
               </div>
-              <p className="text-xs text-slate-400">
-                Predictive illegal logging intelligence report & explainable factor analysis
+              <p className="text-xs font-tactical tracking-wider text-[#A99A87] mt-0.5">
+                DECISION-SUPPORT INTELLIGENCE REPORT • EXPLAINABLE FACTOR ANALYSIS
               </p>
             </div>
           </div>
 
           <button
             onClick={onClose}
-            className="rounded-xl p-2 text-slate-400 hover:bg-slate-800 hover:text-white transition-all"
+            className="rounded-xl p-2 text-[#A99A87] hover:bg-[#2B1C14] hover:text-[#F1E7D5] transition-all"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
         <div className="p-6 space-y-6">
-          {/* Top Score Banner */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 bg-slate-900/90 rounded-xl p-4 border border-slate-800">
-            <div className="md:col-span-1 flex flex-col items-center justify-center border-r border-slate-800 pr-4">
-              <span className="text-[11px] uppercase font-bold tracking-wider text-slate-400">INVESTIGATION RISK</span>
-              <span className="text-4xl font-black text-red-400 my-1">{riskScore} / 100</span>
-              <span className="text-[10px] font-semibold uppercase text-red-500 bg-red-950/80 px-2 py-0.5 rounded border border-red-800">
-                CRITICAL THRESHOLD
+          {/* Top Score Banner: Risk & Confidence */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 bg-[#14100C] rounded-xl p-4 border border-[#4A3022]">
+            <div className="md:col-span-1 flex flex-col items-center justify-center border-r border-[#4A3022] pr-4">
+              <span className="text-[11px] font-tactical font-bold tracking-widest text-[#A99A87] uppercase">
+                INVESTIGATION RISK
               </span>
+              <span className="font-title text-4xl font-black text-[#D52B1E] my-1">
+                {riskScore} <span className="text-lg text-[#736758]">/ 100</span>
+              </span>
+              <div className="flex items-center space-x-2 mt-1">
+                <span className="text-[10px] font-tactical font-bold uppercase text-[#D99A4A] bg-[#2B1C14] px-2 py-0.5 rounded border border-[#8E2B18]">
+                  CONFIDENCE: {confidence}%
+                </span>
+              </div>
             </div>
 
             <div className="md:col-span-3 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-              <div className="bg-slate-950/60 p-2.5 rounded-lg border border-slate-800">
-                <span className="text-slate-500 font-semibold block">LOCATION</span>
-                <span className="font-bold text-slate-200 mt-1 block truncate">{forestName}</span>
+              <div className="bg-[#0B0907]/80 p-2.5 rounded-lg border border-[#4A3022]/60">
+                <span className="text-[#736758] font-tactical font-bold block">LOCATION</span>
+                <span className="font-bold text-[#F1E7D5] mt-1 block truncate font-tactical">{forestName}</span>
               </div>
-              <div className="bg-slate-950/60 p-2.5 rounded-lg border border-slate-800">
-                <span className="text-slate-500 font-semibold block">AFFECTED AREA</span>
-                <span className="font-bold text-amber-400 mt-1 block">{areaHa} ha</span>
+              <div className="bg-[#0B0907]/80 p-2.5 rounded-lg border border-[#4A3022]/60">
+                <span className="text-[#736758] font-tactical font-bold block">AFFECTED AREA</span>
+                <span className="font-bold text-[#D99A4A] mt-1 block font-mono">{areaHa} ha</span>
               </div>
-              <div className="bg-slate-950/60 p-2.5 rounded-lg border border-slate-800">
-                <span className="text-slate-500 font-semibold block">VEGETATION LOSS</span>
-                <span className="font-bold text-red-400 mt-1 block">{vegLossPct}%</span>
+              <div className="bg-[#0B0907]/80 p-2.5 rounded-lg border border-[#4A3022]/60">
+                <span className="text-[#736758] font-tactical font-bold block">VEGETATION DECLINE</span>
+                <span className="font-bold text-[#D52B1E] mt-1 block font-mono">-{vegLossPct}% drop</span>
               </div>
-              <div className="bg-slate-950/60 p-2.5 rounded-lg border border-slate-800">
-                <span className="text-slate-500 font-semibold block">TIMBER PERMIT</span>
-                <span className="font-bold text-rose-400 mt-1 block">NOT FOUND</span>
+              <div className="bg-[#0B0907]/80 p-2.5 rounded-lg border border-[#4A3022]/60">
+                <span className="text-[#736758] font-tactical font-bold block">INVESTIGATION STATUS</span>
+                <span className={`font-bold mt-1 block font-tactical ${verified ? 'text-[#718C48]' : 'text-[#D99A4A]'}`}>
+                  {verified ? 'FIELD DISPATCHED' : 'PENDING REVIEW'}
+                </span>
               </div>
             </div>
           </div>
 
-          {/* Evidence Grid */}
+          {/* Evidence Timeline & Factor Breakdown */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             
-            {/* Left: Satellite Before & After Preview */}
-            <div className="bg-slate-900/80 rounded-xl p-4 border border-slate-800 space-y-3">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center">
-                <Trees className="h-4 w-4 mr-1.5" />
-                Copernicus Sentinel-2 Before vs After Satellite Analysis
-              </h3>
-              
-              <div className="grid grid-cols-2 gap-2">
-                <div className="rounded-lg overflow-hidden border border-slate-800 bg-slate-950 p-2 text-center">
-                  <div className="h-28 bg-emerald-950/60 rounded flex items-center justify-center border border-emerald-800/40 relative">
-                    <span className="text-4xl">🌳</span>
-                    <span className="absolute bottom-1 right-1 bg-slate-900/90 text-[9px] font-mono px-1.5 py-0.5 rounded text-emerald-400">
-                      NDVI 0.76
-                    </span>
-                  </div>
-                  <span className="text-[10px] font-bold text-slate-400 mt-1 block uppercase">01 AUG 2026 (BEFORE)</span>
-                </div>
-
-                <div className="rounded-lg overflow-hidden border border-red-900/40 bg-slate-950 p-2 text-center">
-                  <div className="h-28 bg-red-950/40 rounded flex items-center justify-center border border-red-800/40 relative">
-                    <span className="text-4xl">🪓</span>
-                    <span className="absolute bottom-1 right-1 bg-slate-900/90 text-[9px] font-mono px-1.5 py-0.5 rounded text-red-400">
-                      NDVI 0.31
-                    </span>
-                  </div>
-                  <span className="text-[10px] font-bold text-red-400 mt-1 block uppercase">01 SEP 2026 (AFTER)</span>
-                </div>
+            {/* Left: Explainable Contributing Factors */}
+            <div className="space-y-3">
+              <div className="flex items-center space-x-2 border-b border-[#4A3022] pb-2">
+                <Flame className="h-4 w-4 text-[#D99A4A]" />
+                <h3 className="font-title text-xs font-black tracking-wider text-[#F1E7D5] uppercase">
+                  EXPLAINABLE RISK CONTRIBUTIONS
+                </h3>
               </div>
-
-              <div className="bg-slate-950 p-3 rounded-lg border border-slate-800 text-xs space-y-1">
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Centroid Coordinates:</span>
-                  <span className="font-mono text-slate-200">11.5855° N, 76.5520° E</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Extracted Polygon:</span>
-                  <span className="font-bold text-amber-400">CHG_POLY_001</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Right: Why Flagged? Explainable Factors Checklist */}
-            <div className="bg-slate-900/80 rounded-xl p-4 border border-slate-800 space-y-3">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center">
-                <CheckCircle className="h-4 w-4 mr-1.5" />
-                Why Flagged? (Explainable Factor Breakdown)
-              </h3>
 
               <div className="space-y-2">
-                {factors.map((f, i) => (
-                  <div key={i} className="flex items-start space-x-2 bg-slate-950/70 p-2.5 rounded-lg border border-slate-800/80 text-xs">
-                    <Check className="h-4 w-4 text-emerald-400 flex-shrink-0 mt-0.5" />
-                    <span className="text-slate-200 font-medium">{f}</span>
+                {factors.map((factor, idx) => (
+                  <div key={idx} className="flex items-start space-x-2.5 p-2.5 rounded-lg bg-[#14100C] border border-[#4A3022]/50 text-xs">
+                    <span className="text-[#D52B1E] font-bold font-mono">●</span>
+                    <span className="text-[#F1E7D5] font-tactical font-semibold tracking-wide">{factor}</span>
                   </div>
                 ))}
               </div>
             </div>
+
+            {/* Right: Multi-Source Evidence Dossier */}
+            <div className="space-y-3">
+              <div className="flex items-center space-x-2 border-b border-[#4A3022] pb-2">
+                <Compass className="h-4 w-4 text-[#D99A4A]" />
+                <h3 className="font-title text-xs font-black tracking-wider text-[#F1E7D5] uppercase">
+                  CORRELATED EVIDENCE DOSSIER
+                </h3>
+              </div>
+
+              <div className="space-y-2.5">
+                {/* Satellite Tile Evidence */}
+                <div className="p-3 rounded-lg bg-[#14100C] border border-[#4A3022]/60 flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2 rounded bg-[#8E2B18]/30 border border-[#8E2B18]/50 text-[#D99A4A]">
+                      <Layers className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-[#F1E7D5] font-tactical">Copernicus Sentinel-2 Level-2A</h4>
+                      <p className="text-[10px] text-[#A99A87] font-mono">Bands B04, B08 & SCL Masking</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => { onClose(); onNavigateTab('satellite'); }}
+                    className="flex items-center space-x-1 px-2.5 py-1 rounded bg-[#2B1C14] border border-[#8E2B18] text-[11px] font-tactical font-bold text-[#D99A4A] hover:bg-[#8E2B18] hover:text-[#F1E7D5] transition-all"
+                  >
+                    <Eye className="h-3 w-3" />
+                    <span>INSPECT</span>
+                  </button>
+                </div>
+
+                {/* GPS Telemetry Evidence */}
+                <div className="p-3 rounded-lg bg-[#14100C] border border-[#4A3022]/60 flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2 rounded bg-[#B65324]/30 border border-[#B65324]/50 text-[#D99A4A]">
+                      <Truck className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-[#F1E7D5] font-tactical">Timber Hauler TN01AB1234</h4>
+                      <p className="text-[10px] text-[#A99A87] font-mono">Within 2.3 km of clearing centroid</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => { onClose(); onNavigateTab('vehicles'); }}
+                    className="flex items-center space-x-1 px-2.5 py-1 rounded bg-[#2B1C14] border border-[#B65324] text-[11px] font-tactical font-bold text-[#D99A4A] hover:bg-[#B65324] hover:text-[#F1E7D5] transition-all"
+                  >
+                    <Eye className="h-3 w-3" />
+                    <span>TRACK</span>
+                  </button>
+                </div>
+
+                {/* 3D Tactical Terrain View */}
+                <div className="p-3 rounded-lg bg-[#14100C] border border-[#4A3022]/60 flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2 rounded bg-[#5C160F]/40 border border-[#D52B1E]/40 text-[#D99A4A]">
+                      <Box className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-[#F1E7D5] font-tactical">3D Tactical Terrain Mesh</h4>
+                      <p className="text-[10px] text-[#A99A87] font-mono">Topographical depression & overlay</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => { onClose(); onNavigateTab('3d-forest'); }}
+                    className="flex items-center space-x-1 px-2.5 py-1 rounded bg-[#2B1C14] border border-[#D52B1E] text-[11px] font-tactical font-bold text-[#D99A4A] hover:bg-[#5C160F] hover:text-[#F1E7D5] transition-all"
+                  >
+                    <Eye className="h-3 w-3" />
+                    <span>3D VIEW</span>
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
 
-          {/* Action Button Strip */}
-          <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-slate-800">
-            <div className="flex flex-wrap items-center gap-2">
-              <button
-                onClick={() => { onClose(); onNavigateTab('satellite'); }}
-                className="flex items-center space-x-1.5 rounded-lg bg-slate-800 px-3 py-1.5 text-xs font-bold text-slate-200 hover:bg-slate-700 transition-all border border-slate-700"
-              >
-                <Eye className="h-3.5 w-3.5 text-emerald-400" />
-                <span>VIEW SATELLITE</span>
-              </button>
-
-              <button
-                onClick={() => { onClose(); onNavigateTab('changes'); }}
-                className="flex items-center space-x-1.5 rounded-lg bg-slate-800 px-3 py-1.5 text-xs font-bold text-slate-200 hover:bg-slate-700 transition-all border border-slate-700"
-              >
-                <Layers className="h-3.5 w-3.5 text-amber-400" />
-                <span>VIEW HEATMAP</span>
-              </button>
-
-              <button
-                onClick={() => { onClose(); onNavigateTab('3d-forest'); }}
-                className="flex items-center space-x-1.5 rounded-lg bg-slate-800 px-3 py-1.5 text-xs font-bold text-slate-200 hover:bg-slate-700 transition-all border border-slate-700"
-              >
-                <Box className="h-3.5 w-3.5 text-cyan-400" />
-                <span>VIEW 3D</span>
-              </button>
-
-              <button
-                onClick={() => { onClose(); onNavigateTab('vehicles'); }}
-                className="flex items-center space-x-1.5 rounded-lg bg-slate-800 px-3 py-1.5 text-xs font-bold text-slate-200 hover:bg-slate-700 transition-all border border-slate-700"
-              >
-                <Truck className="h-3.5 w-3.5 text-blue-400" />
-                <span>VIEW VEHICLE</span>
-              </button>
-
-              <button
-                onClick={() => { onClose(); onNavigateTab('permits'); }}
-                className="flex items-center space-x-1.5 rounded-lg bg-slate-800 px-3 py-1.5 text-xs font-bold text-slate-200 hover:bg-slate-700 transition-all border border-slate-700"
-              >
-                <FileCheck className="h-3.5 w-3.5 text-purple-400" />
-                <span>VIEW PERMIT</span>
-              </button>
+          {/* Action Footer */}
+          <div className="pt-4 border-t border-[#4A3022] flex flex-wrap items-center justify-between gap-3">
+            <div className="text-xs text-[#A99A87] font-tactical">
+              PUSHPA DECISION-SUPPORT • EVIDENCE DOSSIER READY FOR EXPORT
             </div>
 
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-3">
               <button
-                onClick={handleMark}
-                disabled={verified}
-                className={`flex items-center space-x-1.5 rounded-xl px-4 py-2 text-xs font-black transition-all ${
-                  verified
-                    ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
-                    : 'bg-emerald-600 text-white hover:bg-emerald-500 shadow-lg shadow-emerald-900/40'
-                }`}
+                onClick={onClose}
+                className="px-4 py-2 rounded-lg bg-[#14100C] border border-[#4A3022] text-xs font-tactical font-bold text-[#A99A87] hover:text-[#F1E7D5] hover:border-[#D99A4A] transition-all"
               >
-                <Check className="h-4 w-4" />
-                <span>{verified ? 'MARKED FOR FIELD VERIFICATION' : 'MARK FOR FIELD VERIFICATION'}</span>
+                CLOSE
               </button>
 
               <button
-                onClick={onClose}
-                className="rounded-xl bg-slate-800 px-4 py-2 text-xs font-bold text-slate-300 hover:bg-slate-700 transition-all"
+                onClick={handleMark}
+                className={`flex items-center space-x-2 px-5 py-2 rounded-lg text-xs font-tactical font-black tracking-wider text-[#F1E7D5] transition-all ${
+                  verified
+                    ? 'bg-[#718C48] border border-[#718C48] shadow-lg shadow-emerald-950/60'
+                    : 'bg-gradient-to-r from-[#8E2B18] to-[#5C160F] border border-[#D99A4A]/60 shadow-lg shadow-[#8E2B18]/50 hover:brightness-110'
+                }`}
               >
-                DISMISS
+                <CheckCircle className="h-4 w-4" />
+                <span>{verified ? 'FIELD PATROL DISPATCHED' : 'AUTHORIZE FIELD VERIFICATION PATROL'}</span>
               </button>
             </div>
           </div>

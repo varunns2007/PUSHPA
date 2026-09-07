@@ -9,28 +9,30 @@ interface HistoricalIncidentsPageProps {
 export const HistoricalIncidentsPage: React.FC<HistoricalIncidentsPageProps> = ({ incidents }) => {
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gis-glass p-4 rounded-xl border border-slate-800">
-        <div className="flex items-center space-x-2">
-          <ShieldAlert className="h-5 w-5 text-amber-400" />
+      <div className="pushpa-panel p-4 flex items-center justify-between">
+        <div className="flex items-center space-x-3">
+          <div className="p-2 rounded-lg bg-[#D99A4A]/10 border border-[#D99A4A]/30">
+            <ShieldAlert className="h-5 w-5 text-[#D99A4A]" />
+          </div>
           <div>
-            <h2 className="text-base font-black uppercase tracking-wider text-slate-100">
+            <h2 className="text-sm font-bold uppercase tracking-wider text-[#F1E7D5] font-display">
               HISTORICAL INCIDENT DATABASE
             </h2>
-            <p className="text-xs text-slate-400">
-              Geospatially indexed historical illegal logging & timber smuggling events
+            <p className="text-xs text-[#A99A87]">
+              Geospatially indexed historical unauthorized clearing & timber smuggling events
             </p>
           </div>
         </div>
-        <span className="rounded-full bg-amber-950 px-3 py-1 text-xs font-bold text-amber-400 border border-amber-800">
+        <span className="rounded px-3 py-1 text-xs font-mono font-bold text-[#D99A4A] bg-[#2a1708] border border-[#523315]">
           {incidents.length} HISTORICAL RECORDS
         </span>
       </div>
 
-      <div className="gis-glass rounded-xl p-4 border border-slate-800 space-y-3">
+      <div className="pushpa-panel p-4 space-y-3">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="border-b border-slate-800 bg-slate-900/80 text-slate-400 font-bold uppercase text-[10px]">
+              <tr className="border-b border-[#241e17] bg-[#12100D] text-[#A99A87] font-bold uppercase text-[10px] tracking-wider">
                 <th className="p-3">Incident ID</th>
                 <th className="p-3">Date</th>
                 <th className="p-3">Forest Area</th>
@@ -41,20 +43,20 @@ export const HistoricalIncidentsPage: React.FC<HistoricalIncidentsPageProps> = (
                 <th className="p-3 text-right">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60 font-medium">
+            <tbody className="divide-y divide-[#1D1813] font-medium">
               {incidents.slice(0, 50).map((inc) => (
-                <tr key={inc.id} className="hover:bg-slate-900/90 transition-colors">
-                  <td className="p-3 font-mono font-bold text-amber-400">{inc.id}</td>
-                  <td className="p-3 font-mono text-slate-300">{inc.incident_date}</td>
-                  <td className="p-3 font-bold text-slate-100">{inc.forest_name}</td>
-                  <td className="p-3 font-mono text-slate-400">
+                <tr key={inc.id} className="hover:bg-[#1D1813]/60 transition-colors">
+                  <td className="p-3 font-mono font-bold text-[#D99A4A]">{inc.id}</td>
+                  <td className="p-3 font-mono text-[#A99A87]">{inc.incident_date}</td>
+                  <td className="p-3 font-bold text-[#F1E7D5]">{inc.forest_name}</td>
+                  <td className="p-3 font-mono text-[#74695D]">
                     {inc.latitude.toFixed(4)}°, {inc.longitude.toFixed(4)}°
                   </td>
-                  <td className="p-3 text-slate-200">{inc.incident_type}</td>
-                  <td className="p-3 font-bold text-rose-400">{inc.estimated_quantity_m3} m³</td>
-                  <td className="p-3 font-mono text-slate-400">{inc.associated_vehicle_id || '—'}</td>
+                  <td className="p-3 text-[#A99A87]">{inc.incident_type}</td>
+                  <td className="p-3 font-mono font-bold text-[#8E2B18]">{inc.estimated_quantity_m3} m³</td>
+                  <td className="p-3 font-mono text-[#74695D]">{inc.associated_vehicle_id || '—'}</td>
                   <td className="p-3 text-right">
-                    <span className="rounded bg-red-950 px-2 py-0.5 text-[10px] font-bold text-red-400 border border-red-800">
+                    <span className="rounded bg-[#260e0a] px-2 py-0.5 text-[10px] font-bold text-[#8E2B18] border border-[#4d1912]">
                       {inc.status}
                     </span>
                   </td>

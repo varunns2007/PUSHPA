@@ -14,7 +14,10 @@ if backend_dir not in sys.path:
     sys.path.insert(0, backend_dir)
 
 from app.config import settings
-from app.api import forests, satellite, changes, vehicles, routes, permits, incidents, risk, alerts, settings as sys_settings
+from app.api import (
+    forests, satellite, changes, vehicles, routes, permits,
+    incidents, risk, alerts, settings as sys_settings, analysis
+)
 from app.database.db import db
 from scripts.generate_demo_data import seed_demo_data
 from app.vehicles.simulator import vehicle_simulator
@@ -45,6 +48,7 @@ app.include_router(permits.router, prefix=settings.API_PREFIX)
 app.include_router(incidents.router, prefix=settings.API_PREFIX)
 app.include_router(risk.router, prefix=settings.API_PREFIX)
 app.include_router(alerts.router, prefix=settings.API_PREFIX)
+app.include_router(analysis.router, prefix=settings.API_PREFIX)
 app.include_router(sys_settings.router, prefix=settings.API_PREFIX)
 
 @app.on_event("startup")

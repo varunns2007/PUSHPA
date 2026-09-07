@@ -175,23 +175,24 @@ def seed_demo_data():
     alt1 = Alert(
         id="ALT_0001",
         timestamp="22:08:40",
-        alert_type="Critical Correlation",
+        alert_type="Multi-Source Correlation",
         severity="CRITICAL",
         forest_id="FOREST_001",
         forest_name="Nilgiri Biosphere Reserve (Zone A)",
         vehicle_id="VEH_001",
         location_lat=11.5830,
         location_lng=76.5490,
-        title="🚨 CRITICAL INVESTIGATION ALERT: Unpermitted Timber Transport Correlated with 2.73 ha Forest Loss",
-        description="Vehicle TN01AB1234 without a valid permit traversed within 2.3 km of newly extracted vegetation loss polygon CHG001 (59.2% loss).",
+        title="⚠️ CRITICAL INVESTIGATION PRIORITY: Potential Unauthorized Clearing Correlated with Vehicle Telemetry",
+        description="Vehicle TN01AB1234 without a valid permit traversed within 2.3 km of newly extracted vegetation disturbance candidate CHG001 (59.2% loss).",
         risk_score=91,
+        confidence=95,
         explainable_factors=[
-            "+27 Forest change severity (59.2% vegetation loss)",
-            "+18 Vegetation density loss (2.73 ha area)",
-            "+20 Missing permit (No registered transport permit)",
+            "+27 Forest disturbance severity (59.2% vegetation loss candidate)",
+            "+18 Vegetation density loss (2.73 ha extracted polygon)",
+            "+20 Permit anomaly (No registered transport permit in registry)",
             "+14 Route anomaly (Route leads to unregistered destination)",
-            "+8 Historical hotspot (8 prior illegal logging incidents)",
-            "+4 Spatial proximity (Vehicle within 2.3 km of clearing)"
+            "+8 Historical hotspot (8 prior unauthorized incidents)",
+            "+4 Spatial proximity (Vehicle within 2.3 km of clearing centroid)"
         ],
         investigation_status="PENDING"
     )

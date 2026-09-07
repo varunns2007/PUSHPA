@@ -1,5 +1,6 @@
+import React from 'react';
+import { Clock, ShieldAlert, ArrowRight, Flame, MapPin } from 'lucide-react';
 import type { Alert } from '../types';
-import { AlertTriangle, ChevronRight, MapPin, Truck, Clock } from 'lucide-react';
 
 interface AlertsListProps {
   alerts: Alert[];
@@ -8,77 +9,108 @@ interface AlertsListProps {
 
 export const AlertsList: React.FC<AlertsListProps> = ({ alerts, onSelectAlert }) => {
   const getSeverityBadge = (severity: string) => {
-    switch (severity) {
+    switch (severity.toUpperCase()) {
       case 'CRITICAL':
-        return <span className="rounded bg-red-950 px-2 py-0.5 text-[10px] font-black text-red-400 border border-red-800 animate-pulse">🔴 CRITICAL</span>;
+        return 'bg-[#5C160F] text-[#F1E7D5] border-[#D52B1E] shadow-red-950/60';
       case 'VERY HIGH':
-        return <span className="rounded bg-orange-950 px-2 py-0.5 text-[10px] font-black text-orange-400 border border-orange-800">🟠 VERY HIGH</span>;
+        return 'bg-[#8E2B18]/80 text-[#F1E7D5] border-[#E0541E]';
       case 'HIGH':
-        return <span className="rounded bg-amber-950 px-2 py-0.5 text-[10px] font-bold text-amber-400 border border-amber-800">🟡 HIGH</span>;
-      case 'MODERATE':
-        return <span className="rounded bg-emerald-950 px-2 py-0.5 text-[10px] font-bold text-emerald-400 border border-emerald-800">🟢 MODERATE</span>;
+        return 'bg-[#B65324]/60 text-[#F1E7D5] border-[#D99A4A]';
       default:
-        return <span className="rounded bg-slate-800 px-2 py-0.5 text-[10px] font-medium text-slate-300">⚪ LOW</span>;
+        return 'bg-[#2B1C14] text-[#D99A4A] border-[#9A8065]/40';
     }
   };
 
   return (
-    <div className="gis-glass rounded-xl p-3.5 border border-slate-800 flex flex-col h-full">
-      <div className="flex items-center justify-between border-b border-slate-800 pb-2.5 mb-2">
+    <div className="pushpa-panel flex h-full flex-col rounded-xl border border-[#4A3022]/50 shadow-2xl overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center justify-between border-b border-[#4A3022]/60 bg-[#14100C]/90 px-4 py-3">
         <div className="flex items-center space-x-2">
-          <AlertTriangle className="h-4 w-4 text-red-400" />
-          <h2 className="text-xs font-bold uppercase tracking-wider text-slate-200">RECENT INVESTIGATION ALERTS</h2>
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#8E2B18]/30 border border-[#D52B1E]/40 text-[#D52B1E]">
+            <Flame className="h-4 w-4 animate-pulse" />
+          </div>
+          <div>
+            <h2 className="font-title text-xs font-black tracking-widest text-[#F1E7D5] uppercase">
+              LIVE TACTICAL ALERTS
+            </h2>
+            <p className="text-[10px] font-tactical tracking-wider text-[#A99A87]">
+              DECISION-SUPPORT INTELLIGENCE FEED
+            </p>
+          </div>
         </div>
-        <span className="rounded-full bg-slate-800 px-2 py-0.5 text-[10px] font-semibold text-slate-400">
-          {alerts.length} ALERTS
+
+        <span className="rounded-full bg-[#1C1510] px-2.5 py-0.5 text-[11px] font-mono font-bold text-[#D99A4A] border border-[#8E2B18]">
+          {alerts.length} ACTIVE
         </span>
       </div>
 
-      <div className="space-y-2 overflow-y-auto flex-1 pr-1 max-h-[380px]">
-        {alerts.map((alt) => (
-          <div
-            key={alt.id}
-            onClick={() => onSelectAlert(alt)}
-            className="group cursor-pointer rounded-xl bg-slate-900/80 p-3 border border-slate-800 hover:border-red-600/50 hover:bg-slate-850 transition-all duration-200"
-          >
-            <div className="flex items-start justify-between gap-2">
-              <div className="space-y-1">
-                <div className="flex items-center space-x-2">
-                  {getSeverityBadge(alt.severity)}
-                  <span className="text-[10px] font-mono text-slate-400 flex items-center">
-                    <Clock className="h-3 w-3 mr-1" />
-                    {alt.timestamp}
-                  </span>
-                </div>
-                <h3 className="text-xs font-bold text-slate-100 group-hover:text-red-400 transition-colors">
-                  {alt.title}
-                </h3>
-              </div>
-
-              <div className="flex items-center space-x-1 text-right">
-                <div className="text-right">
-                  <span className="text-xs font-black text-red-400 block">{alt.risk_score}/100</span>
-                  <span className="text-[9px] uppercase font-semibold text-slate-500">RISK SCORE</span>
-                </div>
-                <ChevronRight className="h-4 w-4 text-slate-600 group-hover:text-red-400 group-hover:translate-x-0.5 transition-all" />
-              </div>
-            </div>
-
-            <div className="mt-2 flex flex-wrap items-center gap-3 text-[11px] text-slate-400 border-t border-slate-800/80 pt-2">
-              <span className="flex items-center text-emerald-400 font-medium">
-                <MapPin className="h-3 w-3 mr-1" />
-                {alt.forest_name}
-              </span>
-
-              {alt.vehicle_id && (
-                <span className="flex items-center text-amber-400 font-medium">
-                  <Truck className="h-3 w-3 mr-1" />
-                  TN01AB1234
-                </span>
-              )}
-            </div>
+      {/* Alerts Feed */}
+      <div className="flex-1 space-y-2.5 overflow-y-auto p-3">
+        {alerts.length === 0 ? (
+          <div className="flex h-48 flex-col items-center justify-center text-center text-[#736758]">
+            <ShieldAlert className="h-8 w-8 mb-2 opacity-50" />
+            <p className="text-xs font-tactical uppercase tracking-wider">ALL FOREST SECTORS CLEAR</p>
+            <p className="text-[10px] text-[#A99A87]">No high-priority disturbances detected</p>
           </div>
-        ))}
+        ) : (
+          alerts.map((alert) => {
+            const isCritical = alert.severity === 'CRITICAL' || alert.severity === 'VERY HIGH';
+            return (
+              <div
+                key={alert.id}
+                onClick={() => onSelectAlert(alert)}
+                className={`group relative rounded-xl p-3 border transition-all duration-200 cursor-pointer pushpa-card pushpa-card-interactive ${
+                  isCritical
+                    ? 'border-[#8E2B18]/70 hover:border-[#D52B1E] bg-gradient-to-r from-[#1C1510] to-[#14100C]'
+                    : 'border-[#4A3022]/50 hover:border-[#D99A4A]'
+                }`}
+              >
+                {/* Top Row: Severity & Timestamp */}
+                <div className="flex items-center justify-between">
+                  <span
+                    className={`rounded px-2 py-0.5 text-[10px] font-tactical font-black tracking-wider border shadow-sm ${getSeverityBadge(
+                      alert.severity
+                    )}`}
+                  >
+                    ● {alert.severity}
+                  </span>
+
+                  <div className="flex items-center space-x-2 text-[10px] font-mono text-[#A99A87]">
+                    <Clock className="h-3 w-3 text-[#D99A4A]" />
+                    <span>{alert.timestamp}</span>
+                  </div>
+                </div>
+
+                {/* Title */}
+                <h3 className="mt-2 text-xs font-bold text-[#F1E7D5] group-hover:text-[#D99A4A] transition-colors line-clamp-2">
+                  {alert.title}
+                </h3>
+
+                {/* Location & Risk Score */}
+                <div className="mt-2.5 flex items-center justify-between text-[11px]">
+                  <div className="flex items-center space-x-1.5 text-[#A99A87] truncate max-w-[170px]">
+                    <MapPin className="h-3 w-3 text-[#8E2B18] shrink-0" />
+                    <span className="truncate font-tactical">{alert.forest_name}</span>
+                  </div>
+
+                  <div className="flex items-center space-x-1 font-mono font-bold">
+                    <span className="text-[10px] text-[#736758]">RISK</span>
+                    <span className={`text-xs ${isCritical ? 'text-[#D52B1E]' : 'text-[#D99A4A]'}`}>
+                      {alert.risk_score}
+                    </span>
+                    <span className="text-[10px] text-[#736758]">/100</span>
+                  </div>
+                </div>
+
+                {/* Hover CTA Indicator */}
+                <div className="mt-2 pt-2 border-t border-[#4A3022]/40 flex items-center justify-between text-[10px] font-tactical tracking-wider text-[#A99A87] group-hover:text-[#F1E7D5]">
+                  <span>INSPECT INVESTIGATION DOSSIER</span>
+                  <ArrowRight className="h-3 w-3 text-[#D99A4A] group-hover:translate-x-0.5 transition-transform" />
+                </div>
+              </div>
+            );
+          })
+        )}
       </div>
     </div>
   );

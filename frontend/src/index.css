@@ -1,67 +1,174 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap');
 @import "tailwindcss";
 @import "leaflet/dist/leaflet.css";
 
+:root {
+  /* PUSHPA Cinematic Red Sandalwood Palette */
+  --bg-primary: #0B0907;
+  --bg-secondary: #14100C;
+  --bg-tertiary: #1C1510;
+  --forest-dark: #121A11;
+  --forest-mid: #1E2D1C;
+  
+  --deep-red: #5C160F;
+  --sandalwood-red: #8E2B18;
+  --ember-orange: #B65324;
+  --warm-highlight: #D99A4A;
+  --warm-gold: #E5A95A;
+  
+  --dust: #9A8065;
+  --earth: #4A3022;
+  --earth-dark: #2B1C14;
+  
+  --text-primary: #F1E7D5;
+  --text-secondary: #A99A87;
+  --text-muted: #736758;
+  
+  --alert-critical: #D52B1E;
+  --alert-high: #E0541E;
+  --alert-moderate: #D99A4A;
+  --alert-low: #718C48;
+  --status-success: #718C48;
+}
+
 @layer base {
   body {
-    @apply bg-slate-950 text-slate-100 font-sans antialiased overflow-x-hidden;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: 'Inter', sans-serif;
+    overflow-x: hidden;
     background-image: 
-      radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.08) 0px, transparent 50%),
-      radial-gradient(at 100% 100%, rgba(239, 68, 68, 0.08) 0px, transparent 50%);
+      radial-gradient(ellipse at 15% 0%, rgba(142, 43, 24, 0.18) 0px, transparent 60%),
+      radial-gradient(ellipse at 85% 100%, rgba(74, 48, 34, 0.25) 0px, transparent 65%),
+      linear-gradient(to bottom, rgba(11, 9, 7, 0.95), rgba(11, 9, 7, 1));
     background-attachment: fixed;
   }
+
+  h1, h2, h3, .font-title {
+    font-family: 'Cinzel', serif;
+    letter-spacing: 0.08em;
+  }
+
+  .font-tactical {
+    font-family: 'Rajdhani', sans-serif;
+    letter-spacing: 0.05em;
+  }
+
+  .font-mono-code {
+    font-family: 'JetBrains Mono', monospace;
+  }
 }
 
-/* Custom GIS Glassmorphism */
-.gis-glass {
-  background: rgba(15, 23, 42, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+/* Cinematic Tactical Glass & Cards */
+.pushpa-panel {
+  background: rgba(20, 16, 12, 0.88);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(154, 128, 101, 0.22);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.65);
 }
 
-.gis-glass-card {
-  background: rgba(30, 41, 59, 0.7);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+.pushpa-card {
+  background: linear-gradient(145deg, rgba(28, 21, 16, 0.85), rgba(18, 14, 10, 0.92));
+  border: 1px solid rgba(142, 43, 24, 0.25);
+  box-shadow: inset 0 1px 1px 0 rgba(217, 154, 74, 0.08);
 }
 
-/* Custom Scrollbars */
+.pushpa-card-interactive {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.pushpa-card-interactive:hover {
+  border-color: rgba(217, 154, 74, 0.5);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px -6px rgba(92, 22, 15, 0.45);
+}
+
+.pushpa-border-red {
+  border-color: rgba(142, 43, 24, 0.45);
+}
+
+.pushpa-border-amber {
+  border-color: rgba(217, 154, 74, 0.4);
+}
+
+/* Subtle Film Grain Texture Overlay */
+.film-grain {
+  background-image: radial-gradient(rgba(217, 154, 74, 0.03) 1px, transparent 0);
+  background-size: 24px 24px;
+}
+
+/* Tactical Corner Brackets */
+.tactical-corner-tl {
+  position: relative;
+}
+.tactical-corner-tl::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 8px;
+  height: 8px;
+  border-top: 2px solid var(--warm-highlight);
+  border-left: 2px solid var(--warm-highlight);
+}
+.tactical-corner-tl::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 8px;
+  height: 8px;
+  border-bottom: 2px solid var(--warm-highlight);
+  border-right: 2px solid var(--warm-highlight);
+}
+
+/* Tactical Scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 ::-webkit-scrollbar-track {
-  background: rgba(15, 23, 42, 0.6);
+  background: #0B0907;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(51, 65, 85, 0.8);
-  border-radius: 3px;
+  background: #4A3022;
+  border-radius: 2px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(16, 185, 129, 0.6);
+  background: #8E2B18;
 }
 
-/* Map Pulse Radar Marker */
+/* Radar Pulse Marker for Map */
 .pulse-radar-marker {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
-  background: #ef4444;
-  box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
-  animation: pulse-red 1.5s infinite;
+  background: #D52B1E;
+  box-shadow: 0 0 0 0 rgba(213, 43, 30, 0.8);
+  animation: pulse-red-sandalwood 1.8s infinite;
 }
 
-@keyframes pulse-red {
+@keyframes pulse-red-sandalwood {
   0% {
     transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+    box-shadow: 0 0 0 0 rgba(213, 43, 30, 0.8);
   }
   70% {
-    transform: scale(1.3);
-    box-shadow: 0 0 0 14px rgba(239, 68, 68, 0);
+    transform: scale(1.35);
+    box-shadow: 0 0 0 16px rgba(213, 43, 30, 0);
   }
   100% {
     transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+    box-shadow: 0 0 0 0 rgba(213, 43, 30, 0);
   }
+}
+
+/* Cinematic Ember Glow Animation */
+@keyframes emberGlow {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.05); }
+}
+
+.animate-ember-glow {
+  animation: emberGlow 3s ease-in-out infinite;
 }

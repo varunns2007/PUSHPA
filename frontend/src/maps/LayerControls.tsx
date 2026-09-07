@@ -1,118 +1,183 @@
 import React from 'react';
 import { Layers, Globe } from 'lucide-react';
 
+export type BasemapMode = 'satellite' | 'dark' | 'topo';
+
 export interface LayerToggles {
+  basemapMode: BasemapMode;
   forestBoundaries: boolean;
-  basemapMode: 'google-hybrid' | 'google-roads' | 'carto-dark';
-  denseTreeHeatmap: boolean;      // 🟢 Dense Tree Coverage Heatmap
-  treesCutHeatmap: boolean;       // 🔴 Trees Cut / Deforestation Heatmap
   ndviOverlay: boolean;
-  vegDensity: boolean;
-  changePolygons: boolean;
-  historicalIncidents: boolean;
-  roads: boolean;
+  ndviChange: boolean;
+  disturbancePolygons: boolean;
   vehicles: boolean;
   vehicleRoutes: boolean;
-  highRiskZones: boolean;
   permittedLocations: boolean;
+  historicalHotspots: boolean;
 }
 
 interface LayerControlsProps {
   layers: LayerToggles;
   onToggle: (layerKey: keyof LayerToggles) => void;
-  onSelectBasemap: (mode: 'google-hybrid' | 'google-roads' | 'carto-dark') => void;
+  onSelectBasemap: (mode: BasemapMode) => void;
 }
 
-export const LayerControls: React.FC<LayerControlsProps> = ({ layers, onToggle, onSelectBasemap }) => {
-  const items: { key: keyof LayerToggles; label: string; color: string; badge?: string }[] = [
-    { key: 'denseTreeHeatmap', label: 'Dense Tree Canopy Heatmap', color: 'emerald', badge: '🟢 GREEN' },
-    { key: 'treesCutHeatmap', label: 'Trees Cut / Deforestation Heatmap', color: 'red', badge: '🔴 RED' },
-    { key: 'forestBoundaries', label: 'Forest Boundaries', color: 'emerald' },
-    { key: 'ndviOverlay', label: 'NDVI Spectral Surface', color: 'teal' },
-    { key: 'changePolygons', label: 'Extracted Loss Polygons', color: 'rose' },
-    { key: 'historicalIncidents', label: 'Historical Incidents', color: 'amber' },
-    { key: 'roads', label: 'Forest Road Corridors', color: 'blue' },
-    { key: 'vehicles', label: 'Tracked Timber Vehicles', color: 'cyan' },
-    { key: 'vehicleRoutes', label: 'Vehicle Trajectories', color: 'indigo' },
-    { key: 'permittedLocations', label: 'Permitted Timber Depots', color: 'purple' },
-  ];
-
+export const LayerControls: React.FC<LayerControlsProps> = ({
+  layers,
+  onToggle,
+  onSelectBasemap,
+}) => {
   return (
-    <div className="gis-glass rounded-xl p-3.5 border border-slate-800 space-y-3">
-      {/* Basemap Selector */}
-      <div className="space-y-1.5 border-b border-slate-800 pb-3">
-        <div className="flex items-center space-x-2 text-slate-300">
-          <Globe className="h-4 w-4 text-cyan-400" />
-          <span className="text-xs font-bold uppercase tracking-wider">MAP BASEMAP ENGINE</span>
+    <div className="pushpa-panel rounded-xl p-3.5 border border-[#4A3022]/60 space-y-3">
+      {/* 1. Basemap Selector */}
+      <div className="space-y-1.5 border-b border-[#4A3022]/40 pb-2.5">
+        <div className="flex items-center justify-between text-xs font-tactical font-bold text-[#A99A87] uppercase tracking-wider">
+          <div className="flex items-center space-x-1.5">
+            <Globe className="h-3.5 w-3.5 text-[#D99A4A]" />
+            <span>BASEMAP PROVIDER</span>
+          </div>
+          <span className="text-[10px] text-[#74695D] font-mono">WGS84 / EPSG:4326</span>
         </div>
+
         <div className="grid grid-cols-3 gap-1.5">
           <button
-            onClick={() => onSelectBasemap('google-hybrid')}
-            className={`rounded-lg py-1.5 px-2 text-[11px] font-extrabold transition-all border ${
-              layers.basemapMode === 'google-hybrid'
-                ? 'bg-emerald-600 text-white border-emerald-500 shadow-md shadow-emerald-950'
-                : 'bg-slate-900 text-slate-400 border-slate-800 hover:bg-slate-800'
+            onClick={() => onSelectBasemap('satellite')}
+            className={`rounded-lg py-1 px-2 text-[11px] font-tactical font-bold uppercase transition-all border ${
+              layers.basemapMode === 'satellite'
+                ? 'bg-[#8E2B18] text-[#F1E7D5] border-[#D99A4A] shadow-sm'
+                : 'bg-[#12100D] text-[#A99A87] border-[#4A3022] hover:bg-[#1D1813]'
             }`}
           >
-            🗺️ Google Satellite
+            Satellite
           </button>
 
           <button
-            onClick={() => onSelectBasemap('google-roads')}
-            className={`rounded-lg py-1.5 px-2 text-[11px] font-extrabold transition-all border ${
-              layers.basemapMode === 'google-roads'
-                ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-950'
-                : 'bg-slate-900 text-slate-400 border-slate-800 hover:bg-slate-800'
+            onClick={() => onSelectBasemap('dark')}
+            className={`rounded-lg py-1 px-2 text-[11px] font-tactical font-bold uppercase transition-all border ${
+              layers.basemapMode === 'dark'
+                ? 'bg-[#4A3022] text-[#F1E7D5] border-[#D99A4A] shadow-sm'
+                : 'bg-[#12100D] text-[#A99A87] border-[#4A3022] hover:bg-[#1D1813]'
             }`}
           >
-            🛣️ Google Roads
+            Dark GIS
           </button>
 
           <button
-            onClick={() => onSelectBasemap('carto-dark')}
-            className={`rounded-lg py-1.5 px-2 text-[11px] font-extrabold transition-all border ${
-              layers.basemapMode === 'carto-dark'
-                ? 'bg-purple-600 text-white border-purple-500 shadow-md shadow-purple-950'
-                : 'bg-slate-900 text-slate-400 border-slate-800 hover:bg-slate-800'
+            onClick={() => onSelectBasemap('topo')}
+            className={`rounded-lg py-1 px-2 text-[11px] font-tactical font-bold uppercase transition-all border ${
+              layers.basemapMode === 'topo'
+                ? 'bg-[#2B1C14] text-[#F1E7D5] border-[#D99A4A] shadow-sm'
+                : 'bg-[#12100D] text-[#A99A87] border-[#4A3022] hover:bg-[#1D1813]'
             }`}
           >
-            🌙 Dark GIS
+            Terrain Topo
           </button>
         </div>
       </div>
 
-      {/* Layer Toggles */}
-      <div className="flex items-center space-x-2 border-b border-slate-800 pb-2">
-        <Layers className="h-4 w-4 text-emerald-400" />
-        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-200">GIS HEATMAP & FEATURE LAYERS</h3>
-      </div>
+      {/* 2. Operational GIS Layers */}
+      <div className="space-y-2">
+        <div className="flex items-center space-x-1.5 text-xs font-tactical font-bold uppercase tracking-wider text-[#F1E7D5]">
+          <Layers className="h-3.5 w-3.5 text-[#D99A4A]" />
+          <span>TACTICAL INTELLIGENCE LAYERS</span>
+        </div>
 
-      <div className="grid grid-cols-2 gap-2 text-xs">
-        {items.map((item) => (
-          <label
-            key={item.key}
-            className={`flex items-center justify-between rounded-lg px-2.5 py-1.5 border cursor-pointer transition-all ${
-              layers[item.key as keyof LayerToggles]
-                ? 'bg-slate-900 border-slate-700 text-slate-100'
-                : 'bg-slate-950/60 border-slate-900 text-slate-500 hover:bg-slate-900'
-            }`}
-          >
-            <div className="flex items-center space-x-2 truncate">
-              <input
-                type="checkbox"
-                checked={Boolean(layers[item.key as keyof LayerToggles])}
-                onChange={() => onToggle(item.key as keyof LayerToggles)}
-                className="h-3.5 w-3.5 rounded accent-emerald-500 cursor-pointer"
-              />
-              <span className="font-semibold truncate">{item.label}</span>
-            </div>
-            {item.badge && (
-              <span className="text-[9px] font-black tracking-wider flex-shrink-0 ml-1">
-                {item.badge}
-              </span>
-            )}
+        <div className="grid grid-cols-2 gap-1.5 text-xs">
+          {/* Reserve Boundaries */}
+          <label className={`flex items-center justify-between p-2 rounded-lg border cursor-pointer transition-all ${
+            layers.forestBoundaries ? 'bg-[#1D1813] border-[#718C48] text-[#F1E7D5]' : 'bg-[#12100D] border-[#4A3022]/30 text-[#74695D]'
+          }`}>
+            <span className="font-tactical font-semibold flex items-center space-x-1.5 truncate">
+              <span className="h-2 w-2 rounded-full bg-[#718C48]" />
+              <span className="truncate">Reserve Forest AOI</span>
+            </span>
+            <input
+              type="checkbox"
+              checked={layers.forestBoundaries}
+              onChange={() => onToggle('forestBoundaries')}
+              className="accent-[#718C48]"
+            />
           </label>
-        ))}
+
+          {/* Disturbance Polygons */}
+          <label className={`flex items-center justify-between p-2 rounded-lg border cursor-pointer transition-all ${
+            layers.disturbancePolygons ? 'bg-[#1D1813] border-[#D52B1E] text-[#F1E7D5]' : 'bg-[#12100D] border-[#4A3022]/30 text-[#74695D]'
+          }`}>
+            <span className="font-tactical font-semibold flex items-center space-x-1.5 truncate">
+              <span className="h-2 w-2 rounded-full bg-[#D52B1E]" />
+              <span className="truncate">Loss Polygons</span>
+            </span>
+            <input
+              type="checkbox"
+              checked={layers.disturbancePolygons}
+              onChange={() => onToggle('disturbancePolygons')}
+              className="accent-[#D52B1E]"
+            />
+          </label>
+
+          {/* Tracked Vehicles */}
+          <label className={`flex items-center justify-between p-2 rounded-lg border cursor-pointer transition-all ${
+            layers.vehicles ? 'bg-[#1D1813] border-[#D99A4A] text-[#F1E7D5]' : 'bg-[#12100D] border-[#4A3022]/30 text-[#74695D]'
+          }`}>
+            <span className="font-tactical font-semibold flex items-center space-x-1.5 truncate">
+              <span className="h-2 w-2 rounded-full bg-[#D99A4A]" />
+              <span className="truncate">Active Timber Vehicles</span>
+            </span>
+            <input
+              type="checkbox"
+              checked={layers.vehicles}
+              onChange={() => onToggle('vehicles')}
+              className="accent-[#D99A4A]"
+            />
+          </label>
+
+          {/* Vehicle Routes */}
+          <label className={`flex items-center justify-between p-2 rounded-lg border cursor-pointer transition-all ${
+            layers.vehicleRoutes ? 'bg-[#1D1813] border-[#B65324] text-[#F1E7D5]' : 'bg-[#12100D] border-[#4A3022]/30 text-[#74695D]'
+          }`}>
+            <span className="font-tactical font-semibold flex items-center space-x-1.5 truncate">
+              <span className="h-2 w-2 rounded-full bg-[#B65324]" />
+              <span className="truncate">Vehicle GPS Corridors</span>
+            </span>
+            <input
+              type="checkbox"
+              checked={layers.vehicleRoutes}
+              onChange={() => onToggle('vehicleRoutes')}
+              className="accent-[#B65324]"
+            />
+          </label>
+
+          {/* Historical Incidents */}
+          <label className={`flex items-center justify-between p-2 rounded-lg border cursor-pointer transition-all ${
+            layers.historicalHotspots ? 'bg-[#1D1813] border-[#8E2B18] text-[#F1E7D5]' : 'bg-[#12100D] border-[#4A3022]/30 text-[#74695D]'
+          }`}>
+            <span className="font-tactical font-semibold flex items-center space-x-1.5 truncate">
+              <span className="h-2 w-2 rounded-full bg-[#8E2B18]" />
+              <span className="truncate">Historical Hotspots</span>
+            </span>
+            <input
+              type="checkbox"
+              checked={layers.historicalHotspots}
+              onChange={() => onToggle('historicalHotspots')}
+              className="accent-[#8E2B18]"
+            />
+          </label>
+
+          {/* Permitted Timber Depots */}
+          <label className={`flex items-center justify-between p-2 rounded-lg border cursor-pointer transition-all ${
+            layers.permittedLocations ? 'bg-[#1D1813] border-[#9A8065] text-[#F1E7D5]' : 'bg-[#12100D] border-[#4A3022]/30 text-[#74695D]'
+          }`}>
+            <span className="font-tactical font-semibold flex items-center space-x-1.5 truncate">
+              <span className="h-2 w-2 rounded-full bg-[#9A8065]" />
+              <span className="truncate">Permitted Depots</span>
+            </span>
+            <input
+              type="checkbox"
+              checked={layers.permittedLocations}
+              onChange={() => onToggle('permittedLocations')}
+              className="accent-[#9A8065]"
+            />
+          </label>
+        </div>
       </div>
     </div>
   );

@@ -121,6 +121,9 @@ export interface RiskScoreBreakdown {
   route_anomaly: number;
   historical_risk: number;
   spatial_proximity: number;
+  components?: Record<string, number>;
+  ruleset_version?: string;
+  confidence?: number;
   factors: RiskFactor[];
 }
 

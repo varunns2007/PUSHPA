@@ -3,7 +3,8 @@ import json
 import os
 from app.database.models import (
     ForestArea, SatelliteObservation, ChangeEvent, ChangePolygon,
-    HistoricalIncident, TimberPermit, Vehicle, Alert, SystemSettings, RiskScoreBreakdown
+    HistoricalIncident, TimberPermit, Vehicle, Alert, SystemSettings, RiskScoreBreakdown,
+    AnalysisJob, DisturbanceEvent, AuditLogEntry, EvidenceItem
 )
 from app.config import settings
 
@@ -17,6 +18,13 @@ class InMemDB:
         self.permits: Dict[str, TimberPermit] = {}
         self.vehicles: Dict[str, Vehicle] = {}
         self.alerts: List[Alert] = []
+        
+        # PostGIS-ready, async jobs, audit logs, and evidence stores
+        self.jobs: Dict[str, AnalysisJob] = {}
+        self.disturbance_events: Dict[str, DisturbanceEvent] = {}
+        self.audit_logs: List[AuditLogEntry] = []
+        self.evidence: Dict[str, EvidenceItem] = {}
+
         self.system_settings: SystemSettings = SystemSettings(
             google_maps_api_key=settings.GOOGLE_MAPS_API_KEY,
             copernicus_client_id=settings.COPERNICUS_CLIENT_ID,

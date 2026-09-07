@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Navbar } from './components/Navbar';
+import { CinematicIntro } from './components/CinematicIntro';
 import { DemoScenarioBar } from './components/DemoScenarioBar';
 import { StatsOverview } from './components/StatsOverview';
 import { AlertsList } from './components/AlertsList';
@@ -8,8 +9,7 @@ import { SettingsModal } from './components/SettingsModal';
 
 import { MainGISMap } from './maps/MainGISMap';
 import { LayerControls } from './maps/LayerControls';
-import type { LayerToggles } from './maps/LayerControls';
-import { SplitComparisonMap } from './maps/SplitComparisonMap';
+import type { LayerToggles, BasemapMode } from './maps/LayerControls';
 import { TerrainForestScene } from './three/TerrainForestScene';
 
 import { SatelliteAnalysisPage } from './pages/SatelliteAnalysisPage';
@@ -25,7 +25,11 @@ import type {
   TimberPermit, HistoricalIncident, Alert, SystemSettings
 } from './types';
 
-export function App() {
+export default function App() {
+  const [showIntro, setShowIntro] = useState<boolean>(() => {
+    return !sessionStorage.getItem('pushpa_intro_seen');
+  });
+
   const [activeTab, setActiveTab] = useState<string>('dashboard');
   
   // Data State
@@ -49,24 +53,19 @@ export function App() {
   const [isDemoRunning, setIsDemoRunning] = useState<boolean>(false);
   const [demoStep, setDemoStep] = useState<number>(1);
 
-  // GIS Layer Toggles (Google Maps Basemap & Dual Heatmaps Default ON)
+  // GIS Layer Toggles
   const [layers, setLayers] = useState<LayerToggles>({
     forestBoundaries: true,
-    basemapMode: 'google-hybrid',
-    denseTreeHeatmap: true,      // 🟢 Dense Tree Coverage Heatmap (Green)
-    treesCutHeatmap: true,       // 🔴 Trees Cut Deforestation Heatmap (Red)
+    basemapMode: 'satellite',
     ndviOverlay: false,
-    vegDensity: true,
-    changePolygons: true,
-    historicalIncidents: true,
-    roads: true,
+    ndviChange: false,
+    disturbancePolygons: true,
     vehicles: true,
     vehicleRoutes: true,
-    highRiskZones: true,
     permittedLocations: true,
+    historicalHotspots: true,
   });
 
-  // Fetch initial data
   const loadData = async () => {
     try {
       const [fData, cData, vData, pData, iData, aData, sData] = await Promise.all([
@@ -87,11 +86,10 @@ export function App() {
       setAlerts(aData);
       setSettings(sData);
 
-      // Collect change polygons
       const polys = cData.flatMap(c => c.polygons);
       setChangePolygons(polys);
     } catch (e) {
-      console.error("Error loading PUSHPA data:", e);
+      console.error("Error loading PUSHPA intelligence data:", e);
     }
   };
 
@@ -99,260 +97,198 @@ export function App() {
     loadData();
   }, []);
 
-  // Toggle Layer
-  const handleToggleLayer = (key: keyof LayerToggles) => {
-    setLayers(prev => ({ ...prev, [key]: !prev[key] }));
+  const handleIntroComplete = () => {
+    sessionStorage.setItem('pushpa_intro_seen', 'true');
+    setShowIntro(false);
   };
 
-  // Switch Map Basemap Engine
-  const handleSelectBasemap = (mode: 'google-hybrid' | 'google-roads' | 'carto-dark') => {
+  const handleToggleLayer = (layerKey: keyof LayerToggles) => {
+    setLayers(prev => ({ ...prev, [layerKey]: !prev[layerKey] }));
+  };
+
+  const handleSelectBasemap = (mode: BasemapMode) => {
     setLayers(prev => ({ ...prev, basemapMode: mode }));
   };
 
-  // Trigger Demo Scenario
-  const handleStartDemo = () => {
-    setIsDemoRunning(true);
-    setDemoStep(1);
-    setActiveTab('dashboard');
+  const handleSelectPolygon = (poly: ChangePolygon) => {
+    const parentEvent = changes.find(c => c.id === poly.event_id) || changes[0] || null;
+    setSelectedChangeEvent(parentEvent);
+    setFlyToCenter([poly.centroid_lat, poly.centroid_lng]);
   };
 
-  const demoStepsList = [
-    "Querying Copernicus Sentinel-2 Satellite Observation for Nilgiri Biosphere Zone A",
-    "Calculating Vegetation Density Index (NDVI B08 & B04 matrices)",
-    "Before vs After NDVI comparison detected 59.2% vegetation drop",
-    "Extracted Change Polygon CHG_POLY_001 (2.73 ha clearing)",
-    "Tracked Vehicle TN01AB1234 detected traversing within 2.3 km",
-    "Route Analysis: Vehicle route intersects forest change zone heading to unregistered destination",
-    "Timber Permit Verification: NO VALID PERMIT FOUND for vehicle TN01AB1234",
-    "Historical Incident Correlation: Area matches 8 prior illegal logging incidents",
-    "Explainable AI Risk Engine calculated Investigation Risk Score: 91/100 (CRITICAL)",
-    "🚨 CRITICAL ALERT TRIGGERED: Opening Officer Investigation Panel"
-  ];
-
-  const handleNextDemoStep = () => {
-    if (demoStep < 10) {
-      setDemoStep(prev => prev + 1);
-    } else {
-      // Step 10: Trigger alert & open investigation panel
-      setFlyToCenter([11.5855, 76.5520]);
-      if (alerts.length > 0) {
-        setSelectedAlert(alerts[0]);
-      }
-    }
+  const handleSelectVehicle = (v: Vehicle) => {
+    setFlyToCenter([v.current_lat, v.current_lng]);
   };
 
-  const handleSimulateVehicleStep = async () => {
+  const handleMarkVerification = async (alertId: string) => {
     try {
-      const updated = await api.simulateVehicles();
-      setVehicles(updated);
+      await api.updateAlertStatus(alertId, 'FIELD_VERIFICATION');
+      setAlerts(prev => prev.map(a => a.id === alertId ? { ...a, investigation_status: 'FIELD_VERIFICATION' } : a));
     } catch (e) {
       console.error(e);
     }
   };
 
-  const unpermittedCount = vehicles.filter(v => v.permit_status !== 'VALID').length;
-  const criticalCount = alerts.filter(a => a.severity === 'CRITICAL').length;
-  const avgRisk = 78;
+  const handleSimulateVehicleStep = () => {
+    // Incrementally step simulated vehicle positions along tracks
+    setVehicles(prev => prev.map(v => ({
+      ...v,
+      current_lat: v.current_lat + (Math.random() - 0.5) * 0.002,
+      current_lng: v.current_lng + (Math.random() - 0.5) * 0.002,
+      speed_kmh: Math.max(10, Math.min(80, v.speed_kmh + (Math.random() - 0.5) * 5))
+    })));
+  };
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-950 text-slate-100 font-sans">
-      {/* Top Header */}
+    <div className="flex min-h-screen flex-col bg-[#0B0907] text-[#F1E7D5] selection:bg-[#8E2B18] selection:text-[#F1E7D5]">
+      {/* 1. Cinematic Intro Overlay */}
+      {showIntro && <CinematicIntro onComplete={handleIntroComplete} />}
+
+      {/* 2. Top Tactical Navbar */}
       <Navbar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
-        onOpenDemo={handleStartDemo}
+        onOpenDemo={() => setIsDemoRunning(true)}
         onOpenSettings={() => setIsSettingsOpen(true)}
         liveStatus={true}
       />
 
-      {/* Demo Scenario Controller Bar */}
+      {/* 3. Demo Scenario Bar */}
       {isDemoRunning && (
         <DemoScenarioBar
           currentStep={demoStep}
-          totalSteps={10}
-          stepName={demoStepsList[demoStep - 1]}
-          onNext={handleNextDemoStep}
+          totalSteps={5}
+          stepName={`Phase ${demoStep}: Correlated Disturbance Inspection`}
+          onNext={() => setDemoStep(s => (s >= 5 ? 1 : s + 1))}
           onClose={() => setIsDemoRunning(false)}
         />
       )}
 
-      {/* Main Content Area */}
-      <main className="flex-1 p-4 space-y-4 max-w-[1800px] w-full mx-auto">
-        {/* Top Stats Overview */}
-        <StatsOverview
-          forestsCount={forests.length}
-          changesCount={changes.length}
-          criticalAlertsCount={criticalCount}
-          vehiclesCount={vehicles.length}
-          unpermittedCount={unpermittedCount}
-          avgRisk={avgRisk}
-        />
-
-        {/* Tab 1: Main Command Dashboard */}
+      {/* 4. Main Tactical Content Area */}
+      <main className="flex-1 p-4 max-w-7xl mx-auto w-full space-y-4">
         {activeTab === 'dashboard' && (
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 min-h-[580px]">
-            {/* GIS Map Canvas (3 Cols) */}
-            <div className="lg:col-span-3 h-[580px] relative">
-              <MainGISMap
-                forests={forests}
-                changePolygons={changePolygons}
-                vehicles={vehicles}
-                incidents={incidents}
-                layers={layers}
-                selectedForest={selectedForest}
-                onSelectPolygon={(poly) => {
-                  const parentEvent = changes.find(c => c.polygons.some(p => p.id === poly.id));
-                  setSelectedChangeEvent(parentEvent || null);
-                  if (alerts.length > 0) setSelectedAlert(alerts[0]);
-                }}
-                onSelectVehicle={() => {
-                  setActiveTab('vehicles');
-                }}
-                flyToCenter={flyToCenter}
-              />
-            </div>
+          <div className="space-y-4">
+            {/* Top Stat Overview Tiles */}
+            <StatsOverview
+              forests={forests}
+              changePolygons={changePolygons}
+              vehicles={vehicles}
+              alerts={alerts}
+            />
 
-            {/* Right Panel: Layer Controls & Alerts */}
-            <div className="lg:col-span-1 space-y-4 flex flex-col h-[580px]">
-              <LayerControls
-                layers={layers}
-                onToggle={handleToggleLayer}
-                onSelectBasemap={handleSelectBasemap}
-              />
-              <div className="flex-1 overflow-hidden">
+            {/* Tactical Grid: Left 2D GIS Map & Controls, Right Live Alert Feed */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 h-[640px]">
+              <div className="lg:col-span-2 flex flex-col space-y-3 h-full">
+                {/* 2D GIS Map */}
+                <div className="flex-1 min-h-[440px]">
+                  <MainGISMap
+                    forests={forests}
+                    changePolygons={changePolygons}
+                    vehicles={vehicles}
+                    incidents={incidents}
+                    layers={layers}
+                    selectedForest={selectedForest}
+                    onSelectPolygon={handleSelectPolygon}
+                    onSelectVehicle={handleSelectVehicle}
+                    flyToCenter={flyToCenter}
+                  />
+                </div>
+
+                {/* Layer Toggles Panel */}
+                <LayerControls
+                  layers={layers}
+                  onToggle={handleToggleLayer}
+                  onSelectBasemap={handleSelectBasemap}
+                />
+              </div>
+
+              {/* Right Alert Operations Console */}
+              <div className="h-full">
                 <AlertsList
                   alerts={alerts}
-                  onSelectAlert={(alt) => {
-                    setSelectedAlert(alt);
-                    setFlyToCenter([alt.location_lat, alt.location_lng]);
-                  }}
+                  onSelectAlert={(a) => setSelectedAlert(a)}
                 />
               </div>
             </div>
           </div>
         )}
 
-        {/* Tab 2: Forest Monitoring */}
-        {activeTab === 'forests' && (
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 h-[580px]">
-            <div className="lg:col-span-3 h-full">
-              <MainGISMap
-                forests={forests}
-                changePolygons={changePolygons}
-                vehicles={vehicles}
-                incidents={incidents}
-                layers={layers}
-                selectedForest={selectedForest}
-                onSelectPolygon={() => {}}
-                onSelectVehicle={() => {}}
-              />
-            </div>
-            <div className="lg:col-span-1 gis-glass p-4 rounded-xl border border-slate-800 space-y-3 overflow-y-auto">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400">FOREST REGIONS ({forests.length})</h3>
-              <div className="space-y-2">
-                {forests.map(f => (
-                  <div key={f.id} className="bg-slate-900/80 p-3 rounded-xl border border-slate-800 space-y-1 text-xs">
-                    <div className="flex justify-between font-bold text-slate-100">
-                      <span>{f.name}</span>
-                      <span className="text-emerald-400">{f.code}</span>
-                    </div>
-                    <div className="text-[11px] text-slate-400">Area: {f.total_area_ha} ha</div>
-                    <div className="flex justify-between text-[11px] pt-1">
-                      <span className="text-slate-400">Dense Veg: {f.dense_veg_pct}%</span>
-                      <span className="font-bold text-red-400">Risk: {f.current_risk_score}/100</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Tab 3: Satellite Analysis */}
         {activeTab === 'satellite' && (
-          <SatelliteAnalysisPage forests={forests} onSelectForest={setSelectedForest} />
+          <SatelliteAnalysisPage
+            forests={forests}
+            onSelectForest={(f) => {
+              setSelectedForest(f);
+              setFlyToCenter([f.center_lat, f.center_lng]);
+            }}
+          />
         )}
 
-        {/* Tab 4: Change Detection & Comparison */}
         {activeTab === 'changes' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 h-[600px]">
-            <SplitComparisonMap forestName="Nilgiri Biosphere Reserve (Zone A)" />
-            <ChangeDetectionPage
-              forests={forests}
-              changes={changes}
-              onSelectPolygon={() => {
-                if (alerts.length > 0) setSelectedAlert(alerts[0]);
-              }}
-            />
-          </div>
+          <ChangeDetectionPage
+            forests={forests}
+            changes={changes}
+            onSelectPolygon={handleSelectPolygon}
+          />
         )}
 
-        {/* Tab 5: 3D Forest View */}
         {activeTab === '3d-forest' && (
-          <div className="h-[600px]">
+          <div className="h-[750px] w-full">
             <TerrainForestScene forestName="Nilgiri Biosphere Reserve (Zone A)" />
           </div>
         )}
 
-        {/* Tab 6: Vehicle Intelligence */}
         {activeTab === 'vehicles' && (
           <VehicleIntelligencePage
             vehicles={vehicles}
             permits={permits}
             onSimulateStep={handleSimulateVehicleStep}
-            onSelectVehicle={(v) => {
-              setFlyToCenter([v.current_lat, v.current_lng]);
-              setActiveTab('dashboard');
-            }}
+            onSelectVehicle={handleSelectVehicle}
           />
         )}
 
-        {/* Tab 7: Routes */}
-        {activeTab === 'routes' && (
-          <VehicleIntelligencePage
-            vehicles={vehicles}
-            permits={permits}
-            onSimulateStep={handleSimulateVehicleStep}
-            onSelectVehicle={() => {}}
-          />
-        )}
-
-        {/* Tab 8: Timber Permits */}
         {activeTab === 'permits' && <TimberPermitsPage permits={permits} />}
-
-        {/* Tab 9: Historical Incidents */}
         {activeTab === 'incidents' && <HistoricalIncidentsPage incidents={incidents} />}
-
-        {/* Tab 10: Risk Engine */}
         {activeTab === 'risk' && <RiskAnalyticsPage />}
       </main>
 
-      {/* Officer Case Investigation Modal */}
+      {/* 5. Investigation Modal */}
       {(selectedAlert || selectedChangeEvent) && (
         <InvestigationModal
           alert={selectedAlert}
           changeEvent={selectedChangeEvent}
-          onClose={() => { setSelectedAlert(null); setSelectedChangeEvent(null); }}
-          onNavigateTab={(tab) => setActiveTab(tab)}
-          onMarkVerification={(id) => {
-            api.updateAlertStatus(id, 'FIELD_VERIFICATION');
+          onClose={() => {
+            setSelectedAlert(null);
+            setSelectedChangeEvent(null);
           }}
+          onNavigateTab={(t) => setActiveTab(t)}
+          onMarkVerification={handleMarkVerification}
         />
       )}
 
-      {/* Settings Modal */}
-      {isSettingsOpen && settings && (
+      {/* 6. Settings Modal */}
+      {isSettingsOpen && (
         <SettingsModal
-          settings={settings}
-          onSave={(newSettings) => {
-            setSettings(newSettings);
-            api.updateSettings(newSettings);
+          settings={settings || {
+            google_maps_api_key: '',
+            copernicus_client_id: '',
+            copernicus_client_secret: '',
+            simulation_mode: true,
+            simulation_speed_sec: 3,
+            ndvi_non_veg_threshold: 0.2,
+            ndvi_sparse_threshold: 0.4,
+            ndvi_moderate_threshold: 0.6,
+            risk_low_max: 29,
+            risk_moderate_max: 49,
+            risk_high_max: 69,
+            risk_very_high_max: 84
           }}
           onClose={() => setIsSettingsOpen(false)}
+          onSave={async (newSettings) => {
+            setSettings(newSettings);
+            setIsSettingsOpen(false);
+          }}
         />
       )}
     </div>
   );
 }
-
-export default App;
