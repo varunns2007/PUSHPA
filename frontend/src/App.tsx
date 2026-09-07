@@ -7,6 +7,7 @@ import { InvestigationModal } from './components/InvestigationModal';
 import { SettingsModal } from './components/SettingsModal';
 import { PoliceDispatchModal } from './components/PoliceDispatchModal';
 import { DailyComparisonPanel } from './components/DailyComparisonPanel';
+import { IntroScreen } from './components/IntroScreen';
 
 import { MainGISMap } from './maps/MainGISMap';
 import { LayerControls } from './maps/LayerControls';
@@ -40,6 +41,7 @@ const FOREST_NAME = 'Nilgiri Biosphere Reserve (Zone A)';
 
 export function App() {
   const [activeTab, setActiveTab] = useState<string>('dashboard');
+  const [showIntro, setShowIntro] = useState<boolean>(true);
 
   // ── Data state ─────────────────────────────────────────────────
   const [forests, setForests]             = useState<ForestArea[]>([]);
@@ -188,8 +190,12 @@ export function App() {
     />
   );
 
+  if (showIntro) {
+    return <IntroScreen onComplete={() => setShowIntro(false)} />;
+  }
+
   return (
-    <div className="min-h-screen flex flex-col text-slate-100 relative">
+    <div className="min-h-screen flex flex-col relative" style={{ color: '#F5E6DC' }}>
       {/* Navbar */}
       <Navbar
         activeTab={activeTab}
