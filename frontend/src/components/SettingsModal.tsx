@@ -25,15 +25,39 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     onClose();
   };
 
+  const inputStyle = {
+    background: 'rgba(10,3,0,0.85)',
+    border: '1px solid rgba(185,28,28,0.25)',
+    color: '#F5E6DC',
+    outline: 'none',
+    colorScheme: 'dark' as const,
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-md">
-      <div className="gis-glass w-full max-w-2xl rounded-2xl border border-slate-800 shadow-2xl">
-        <div className="flex items-center justify-between border-b border-slate-800 bg-slate-900/90 px-6 py-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-md" style={{ background: 'rgba(0,0,0,0.85)' }}>
+      <div
+        className="w-full max-w-2xl rounded-2xl overflow-hidden shadow-2xl animate-fade-slide-up"
+        style={{
+          background: 'linear-gradient(135deg, rgba(21,5,0,0.98) 0%, rgba(10,3,0,0.98) 100%)',
+          border: '1px solid rgba(185,28,28,0.4)',
+          boxShadow: '0 0 50px rgba(185,28,28,0.25)'
+        }}
+      >
+        <div
+          className="flex items-center justify-between px-6 py-4"
+          style={{ background: 'rgba(10,3,0,0.9)', borderBottom: '1px solid rgba(185,28,28,0.25)' }}
+        >
           <div className="flex items-center space-x-2.5">
-            <Settings className="h-5 w-5 text-emerald-400" />
-            <h2 className="text-base font-black tracking-wider text-slate-100 uppercase">SYSTEM SETTINGS & CONFIGURATION</h2>
+            <Settings className="h-5 w-5" style={{ color: '#EA580C' }} />
+            <h2 className="font-orbitron text-xs font-black tracking-widest uppercase" style={{ color: '#FCA5A5' }}>
+              SYSTEM SETTINGS &amp; CONFIGURATION
+            </h2>
           </div>
-          <button onClick={onClose} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white">
+          <button
+            onClick={onClose}
+            className="rounded-lg p-1.5 transition-colors hover:bg-red-950/40"
+            style={{ color: 'rgba(217,119,6,0.7)' }}
+          >
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -41,43 +65,52 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         <form onSubmit={handleSubmit} className="p-6 space-y-6 max-h-[80vh] overflow-y-auto">
           {/* Maps & API Credentials */}
           <div className="space-y-3">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center">
+            <h3 className="font-orbitron text-[10px] font-black uppercase tracking-widest flex items-center" style={{ color: '#EA580C' }}>
               <Key className="h-4 w-4 mr-1.5" />
-              Google Maps & Copernicus Credentials
+              Google Maps &amp; Copernicus Credentials
             </h3>
             
-            <div className="space-y-2 text-xs">
+            <div className="space-y-3 text-xs">
               <div>
-                <label className="block text-slate-400 font-semibold mb-1">Google Maps Platform API Key</label>
+                <label className="block text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: 'rgba(217,119,6,0.7)' }}>
+                  Google Maps Platform API Key
+                </label>
                 <input
                   type="password"
                   value={formData.google_maps_api_key}
                   onChange={(e) => handleChange('google_maps_api_key', e.target.value)}
                   placeholder="AIzaSy..."
-                  className="w-full rounded-xl bg-slate-900 px-3.5 py-2.5 text-slate-100 border border-slate-800 focus:border-emerald-500 focus:outline-none"
+                  className="w-full rounded-xl px-3.5 py-2.5 text-xs font-mono-hud"
+                  style={inputStyle}
                 />
-                <span className="text-[10px] text-slate-500 mt-0.5 block">Stored securely in server environment runtime</span>
+                <span className="text-[9px] mt-0.5 block" style={{ color: 'rgba(217,119,6,0.45)' }}>Stored securely in server environment runtime</span>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-400 font-semibold mb-1">Copernicus Client ID</label>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: 'rgba(217,119,6,0.7)' }}>
+                    Copernicus Client ID
+                  </label>
                   <input
                     type="text"
                     value={formData.copernicus_client_id}
                     onChange={(e) => handleChange('copernicus_client_id', e.target.value)}
                     placeholder="cdse-client-id"
-                    className="w-full rounded-xl bg-slate-900 px-3.5 py-2 text-slate-100 border border-slate-800 focus:border-emerald-500 focus:outline-none"
+                    className="w-full rounded-xl px-3.5 py-2 text-xs font-mono-hud"
+                    style={inputStyle}
                   />
                 </div>
                 <div>
-                  <label className="block text-slate-400 font-semibold mb-1">Copernicus Client Secret</label>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: 'rgba(217,119,6,0.7)' }}>
+                    Copernicus Client Secret
+                  </label>
                   <input
                     type="password"
                     value={formData.copernicus_client_secret}
                     onChange={(e) => handleChange('copernicus_client_secret', e.target.value)}
                     placeholder="••••••••••••"
-                    className="w-full rounded-xl bg-slate-900 px-3.5 py-2 text-slate-100 border border-slate-800 focus:border-emerald-500 focus:outline-none"
+                    className="w-full rounded-xl px-3.5 py-2 text-xs font-mono-hud"
+                    style={inputStyle}
                   />
                 </div>
               </div>
@@ -85,82 +118,101 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           </div>
 
           {/* Configurable NDVI & Risk Thresholds */}
-          <div className="space-y-3 pt-4 border-t border-slate-800">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center">
+          <div className="space-y-3 pt-4" style={{ borderTop: '1px solid rgba(185,28,28,0.2)' }}>
+            <h3 className="font-orbitron text-[10px] font-black uppercase tracking-widest flex items-center" style={{ color: '#D97706' }}>
               <Sliders className="h-4 w-4 mr-1.5" />
-              Configurable NDVI & Risk Engine Thresholds
+              Configurable NDVI &amp; Risk Engine Thresholds
             </h3>
 
             <div className="grid grid-cols-3 gap-3 text-xs">
               <div>
-                <label className="block text-slate-400 font-semibold mb-1">Non-Veg Cutoff</label>
+                <label className="block text-[9px] font-bold uppercase tracking-wider mb-1" style={{ color: 'rgba(217,119,6,0.7)' }}>
+                  Non-Veg Cutoff
+                </label>
                 <input
                   type="number"
                   step="0.05"
                   value={formData.ndvi_non_veg_threshold}
                   onChange={(e) => handleChange('ndvi_non_veg_threshold', parseFloat(e.target.value))}
-                  className="w-full rounded-xl bg-slate-900 px-3 py-2 text-slate-100 border border-slate-800"
+                  className="w-full rounded-xl px-3 py-2 font-mono-hud"
+                  style={inputStyle}
                 />
               </div>
 
               <div>
-                <label className="block text-slate-400 font-semibold mb-1">Sparse Veg Threshold</label>
+                <label className="block text-[9px] font-bold uppercase tracking-wider mb-1" style={{ color: 'rgba(217,119,6,0.7)' }}>
+                  Sparse Veg Cutoff
+                </label>
                 <input
                   type="number"
                   step="0.05"
                   value={formData.ndvi_sparse_threshold}
                   onChange={(e) => handleChange('ndvi_sparse_threshold', parseFloat(e.target.value))}
-                  className="w-full rounded-xl bg-slate-900 px-3 py-2 text-slate-100 border border-slate-800"
+                  className="w-full rounded-xl px-3 py-2 font-mono-hud"
+                  style={inputStyle}
                 />
               </div>
 
               <div>
-                <label className="block text-slate-400 font-semibold mb-1">Moderate Veg Threshold</label>
+                <label className="block text-[9px] font-bold uppercase tracking-wider mb-1" style={{ color: 'rgba(217,119,6,0.7)' }}>
+                  Moderate Veg Cutoff
+                </label>
                 <input
                   type="number"
                   step="0.05"
                   value={formData.ndvi_moderate_threshold}
                   onChange={(e) => handleChange('ndvi_moderate_threshold', parseFloat(e.target.value))}
-                  className="w-full rounded-xl bg-slate-900 px-3 py-2 text-slate-100 border border-slate-800"
+                  className="w-full rounded-xl px-3 py-2 font-mono-hud"
+                  style={inputStyle}
                 />
               </div>
             </div>
           </div>
 
           {/* Simulation Controls */}
-          <div className="space-y-3 pt-4 border-t border-slate-800">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-cyan-400 flex items-center">
+          <div className="space-y-3 pt-4" style={{ borderTop: '1px solid rgba(185,28,28,0.2)' }}>
+            <h3 className="font-orbitron text-[10px] font-black uppercase tracking-widest flex items-center" style={{ color: '#EA580C' }}>
               <Database className="h-4 w-4 mr-1.5" />
-              Telemetry & Simulation Controls
+              Telemetry &amp; Simulation Controls
             </h3>
 
-            <div className="flex items-center justify-between bg-slate-900 p-3 rounded-xl border border-slate-800 text-xs">
+            <div
+              className="flex items-center justify-between p-3 rounded-xl text-xs"
+              style={{ background: 'rgba(10,3,0,0.7)', border: '1px solid rgba(185,28,28,0.2)' }}
+            >
               <div>
-                <span className="font-bold text-slate-200 block">Vehicle Telemetry Simulator</span>
-                <span className="text-slate-400">Generate real-time vehicle movement events around forest boundaries</span>
+                <span className="font-bold block" style={{ color: '#F5E6DC' }}>Vehicle Telemetry Simulator</span>
+                <span className="text-[10px]" style={{ color: 'rgba(217,119,6,0.6)' }}>Generate real-time vehicle movement events around forest boundaries</span>
               </div>
               <input
                 type="checkbox"
                 checked={formData.simulation_mode}
                 onChange={(e) => handleChange('simulation_mode', e.target.checked)}
-                className="h-4 w-4 rounded accent-emerald-500"
+                className="h-4 w-4 rounded accent-red-600 cursor-pointer"
               />
             </div>
           </div>
 
-          <div className="flex items-center justify-end space-x-3 pt-4 border-t border-slate-800">
+          <div className="flex items-center justify-end space-x-3 pt-4" style={{ borderTop: '1px solid rgba(185,28,28,0.2)' }}>
             <button
               type="button"
               onClick={onClose}
-              className="rounded-xl bg-slate-800 px-4 py-2 text-xs font-bold text-slate-300 hover:bg-slate-700"
+              className="rounded-xl px-4 py-2 font-orbitron text-[10px] font-bold transition-all hover:bg-red-950/30"
+              style={{ background: 'rgba(28,8,0,0.8)', color: 'rgba(245,230,220,0.7)', border: '1px solid rgba(185,28,28,0.2)' }}
             >
-              Cancel
+              CANCEL
             </button>
             <button
               type="submit"
-              className="flex items-center space-x-1.5 rounded-xl bg-emerald-600 px-5 py-2 text-xs font-black text-white hover:bg-emerald-500 shadow-lg shadow-emerald-900/50"
+              className="flex items-center space-x-1.5 rounded-xl px-5 py-2 font-orbitron text-[10px] font-black uppercase tracking-widest transition-all hover:scale-[1.02] active:scale-[0.98]"
+              style={{
+                background: 'linear-gradient(135deg, #7F1D1D, #B91C1C)',
+                border: '1px solid rgba(185,28,28,0.6)',
+                color: '#FEE2E2',
+                boxShadow: '0 0 20px rgba(185,28,28,0.3)'
+              }}
             >
-              <Save className="h-4 w-4" />
+              <Save className="h-3.5 w-3.5" />
               <span>SAVE CONFIGURATION</span>
             </button>
           </div>

@@ -254,21 +254,35 @@ export function App() {
         {activeTab === 'forests' && (
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 h-[580px] animate-fade-slide-up">
             <div className="lg:col-span-3 h-full">{mainMap}</div>
-            <div className="lg:col-span-1 gis-glass p-4 rounded-xl border border-slate-800 space-y-3 overflow-y-auto">
-              <h3 className="font-orbitron text-[10px] font-black uppercase tracking-widest text-emerald-400 text-glow-green">
+            <div
+              className="lg:col-span-1 p-4 rounded-xl space-y-3 overflow-y-auto"
+              style={{ background: 'rgba(21,5,0,0.9)', border: '1px solid rgba(185,28,28,0.22)' }}
+            >
+              <h3 className="font-orbitron text-[10px] font-black uppercase tracking-widest" style={{ color: '#FCA5A5' }}>
                 FOREST REGIONS ({forests.length})
               </h3>
               <div className="space-y-2">
                 {forests.map(f => (
-                  <div key={f.id} className="bg-slate-900/80 p-3 rounded-xl border border-slate-800 space-y-1 text-xs hover:border-emerald-900/50 transition-colors">
-                    <div className="flex justify-between font-bold text-slate-100">
+                  <div
+                    key={f.id}
+                    onClick={() => {
+                      setSelectedForest(f);
+                      setFlyToCenter([f.center_lat, f.center_lng]);
+                    }}
+                    className="p-3 rounded-xl space-y-1 text-xs cursor-pointer transition-all hover:scale-[1.01]"
+                    style={{
+                      background: 'rgba(10,3,0,0.7)',
+                      border: '1px solid rgba(185,28,28,0.18)'
+                    }}
+                  >
+                    <div className="flex justify-between font-bold" style={{ color: '#F5E6DC' }}>
                       <span>{f.name}</span>
-                      <span className="text-emerald-400 font-orbitron text-[10px]">{f.code}</span>
+                      <span className="font-orbitron text-[10px]" style={{ color: '#EA580C' }}>{f.code}</span>
                     </div>
-                    <div className="text-[11px] text-slate-400">Area: {f.total_area_ha} ha</div>
+                    <div className="text-[11px]" style={{ color: 'rgba(217,119,6,0.6)' }}>Area: {f.total_area_ha} ha</div>
                     <div className="flex justify-between text-[11px] pt-1">
-                      <span className="text-slate-400">Dense Veg: {f.dense_veg_pct}%</span>
-                      <span className="font-bold text-red-400">Risk: {f.current_risk_score}/100</span>
+                      <span style={{ color: 'rgba(245,230,220,0.7)' }}>Dense Veg: {f.dense_veg_pct}%</span>
+                      <span className="font-bold font-orbitron" style={{ color: '#DC2626' }}>Risk: {f.current_risk_score}/100</span>
                     </div>
                   </div>
                 ))}

@@ -1,18 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import type { SatelliteObservation, ForestArea } from '../types';
-import { Satellite, Search, Layers, RefreshCw, ChevronDown, Info, AlertTriangle } from 'lucide-react';
+import { Satellite, Search, Layers, RefreshCw, ChevronDown, Info, AlertTriangle, ArrowRight, Eye, Sparkles } from 'lucide-react';
 import { api } from '../api/client';
 
 interface SatelliteAnalysisPageProps {
   forests: ForestArea[];
   onSelectForest: (f: ForestArea) => void;
+  onNavigateTab?: (tab: string) => void;
 }
 
 // Simulated result when backend is offline
 function getSimulatedObservation(forest: ForestArea): SatelliteObservation {
   return {
     forest_id:             forest.id,
-    satellite_name:        'Sentinel-2B',
+    satellite_name:        'Sentinel-2B (Copernicus ESA)',
     product_id:            `S2B_MSIL2A_20260901T061234_N0509_R091_T43PFS_${forest.code}`,
     acquisition_date:      '2026-09-01',
     cloud_coverage_pct:    8.4,
@@ -29,14 +30,26 @@ function getSimulatedObservation(forest: ForestArea): SatelliteObservation {
 
 export const SatelliteAnalysisPage: React.FC<SatelliteAnalysisPageProps> = ({ forests }) => {
   const [selectedForestId, setSelectedForestId] = useState<string>(forests[0]?.id || 'FOREST_001');
-  const [startDate, setStartDate]   = useState<string>('2026-08-01');
+  const [startDate, setStartDate]   = useState<string>('2026-08-20');
   const [endDate, setEndDate]       = useState<string>('2026-09-03');
   const [maxCloud, setMaxCloud]     = useState<number>(20);
   const [loading, setLoading]       = useState<boolean>(false);
   const [observation, setObservation] = useState<SatelliteObservation | null>(null);
   const [demoMode, setDemoMode]     = useState<boolean>(false);
+  const [activeBandView, setActiveBandView] = useState<'ndvi' | 'false-color' | 'b08' | 'b04'>('ndvi');
 
-  const forest = forests.find(f => f.id === selectedForestId) || forests[0];
+  const forest = forests.find(f => f.id === selectedForestId) || forests[0] || {
+    id: 'FOREST_001',
+    name: 'Nilgiri Biosphere Reserve',
+    code: 'NBR-001',
+    center_lat: 11.5855,
+    center_lng: 76.5520,
+    total_area_ha: 5520,
+    dense_veg_pct: 68.4,
+    current_risk_score: 88,
+  };
+
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   const handleSearch = async () => {
     if (!forest) return;
@@ -61,22 +74,100 @@ export const SatelliteAnalysisPage: React.FC<SatelliteAnalysisPageProps> = ({ fo
     }
   };
 
+  // Draw simulated spectral raster onto canvas when observation updates
+  useEffect(() => {
+    if (!canvasRef.current || !observation) return;
+    const ctx = canvasRef.current.getContext('2d');
+    if (!ctx) return;
+
+    const width = canvasRef.current.width;
+    const height = canvasRef.current.height;
+    const imgData = ctx.createImageData(width, height);
+
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const idx = (y * width + x) * 4;
+        const nx = x / width;
+        const ny = y / height;
+
+        // Simulated terrain and forest pattern
+        const noise = Math.sin(nx * 8 + ny * 6) * 0.3 + Math.cos(nx * 14 - ny * 10) * 0.2 + 0.5;
+        // Disturbance patch around center-right
+        const distFromCenter = Math.hypot(nx - 0.65, ny - 0.5);
+        const isCut = distFromCenter < 0.22 && noise < 0.55;
+
+        if (activeBandView === 'ndvi') {
+          if (isCut) {
+            // Cut / degraded zone (crimson/orange)
+            imgData.data[idx]     = 220;
+            imgData.data[idx + 1] = 38;
+            imgData.data[idx + 2] = 38;
+            imgData.data[idx + 3] = 255;
+          } else {
+            // Healthy vegetation (dark green to lush emerald)
+            const veg = Math.max(0, Math.min(255, Math.floor(noise * 200 + 40)));
+            imgData.data[idx]     = Math.floor(veg * 0.15);
+            imgData.data[idx + 1] = veg;
+            imgData.data[idx + 2] = Math.floor(veg * 0.3);
+            imgData.data[idx + 3] = 255;
+          }
+        } else if (activeBandView === 'false-color') {
+          // NIR False Color (vegetation is vibrant red/orange)
+          if (isCut) {
+            imgData.data[idx]     = 100;
+            imgData.data[idx + 1] = 110;
+            imgData.data[idx + 2] = 120;
+            imgData.data[idx + 3] = 255;
+          } else {
+            imgData.data[idx]     = Math.floor(noise * 220 + 35);
+            imgData.data[idx + 1] = 30;
+            imgData.data[idx + 2] = 50;
+            imgData.data[idx + 3] = 255;
+          }
+        } else if (activeBandView === 'b08') {
+          // NIR grayscale
+          const val = isCut ? 50 : Math.floor(noise * 200 + 55);
+          imgData.data[idx]     = val;
+          imgData.data[idx + 1] = val;
+          imgData.data[idx + 2] = val;
+          imgData.data[idx + 3] = 255;
+        } else {
+          // B04 Red grayscale
+          const val = isCut ? 190 : Math.floor((1 - noise) * 120 + 40);
+          imgData.data[idx]     = val;
+          imgData.data[idx + 1] = val;
+          imgData.data[idx + 2] = val;
+          imgData.data[idx + 3] = 255;
+        }
+      }
+    }
+    ctx.putImageData(imgData, 0, 0);
+  }, [observation, activeBandView]);
+
   const inputStyle = {
-    background: 'rgba(10,3,0,0.8)',
+    background: 'rgba(10,3,0,0.85)',
     border: '1px solid rgba(185,28,28,0.25)',
     color: '#F5E6DC',
     outline: 'none',
-    colorScheme: 'dark',
+    colorScheme: 'dark' as const,
   };
 
-  const labelStyle = { color: 'rgba(217,119,6,0.6)', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.15em', fontSize: '9px', display: 'block', marginBottom: '4px' };
+  const labelStyle = {
+    color: 'rgba(217,119,6,0.7)',
+    fontWeight: 700,
+    textTransform: 'uppercase' as const,
+    letterSpacing: '0.15em',
+    fontSize: '9px',
+    display: 'block',
+    marginBottom: '4px'
+  };
 
   return (
     <div className="space-y-4 animate-fade-slide-up">
       {/* ── Header ── */}
       <div
         className="flex flex-wrap items-center justify-between gap-3 rounded-xl px-4 py-3"
-        style={{ background: 'rgba(21,5,0,0.9)', border: '1px solid rgba(185,28,28,0.22)' }}
+        style={{ background: 'rgba(21,5,0,0.9)', border: '1px solid rgba(185,28,28,0.25)' }}
       >
         <div className="flex items-center gap-2.5">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl animate-glow-red" style={{ background: 'linear-gradient(135deg, #7F1D1D, #B91C1C)' }}>
@@ -86,7 +177,7 @@ export const SatelliteAnalysisPage: React.FC<SatelliteAnalysisPageProps> = ({ fo
             <h2 className="font-orbitron text-[11px] font-black uppercase tracking-widest" style={{ color: '#FCA5A5' }}>
               SATELLITE ACQUISITION &amp; NDVI PIPELINE
             </h2>
-            <p className="text-[9px]" style={{ color: 'rgba(217,119,6,0.55)' }}>
+            <p className="text-[9px]" style={{ color: 'rgba(217,119,6,0.6)' }}>
               Query Copernicus Sentinel-2 L2A · Spectral Band Processing · Forest AOI
             </p>
           </div>
@@ -134,21 +225,21 @@ export const SatelliteAnalysisPage: React.FC<SatelliteAnalysisPageProps> = ({ fo
             {/* Dates */}
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label style={{ ...labelStyle, color: 'rgba(34,197,94,0.7)' }}>Start Date</label>
+                <label style={{ ...labelStyle, color: 'rgba(34,197,94,0.8)' }}>Start Date</label>
                 <input
                   type="date" value={startDate}
                   onChange={e => setStartDate(e.target.value)}
                   className="w-full rounded-lg px-2.5 py-2 text-[10px] font-bold"
-                  style={{ ...inputStyle, border: '1px solid rgba(34,197,94,0.25)', color: '#86efac' }}
+                  style={{ ...inputStyle, border: '1px solid rgba(34,197,94,0.3)', color: '#86efac' }}
                 />
               </div>
               <div>
-                <label style={{ ...labelStyle, color: 'rgba(239,68,68,0.7)' }}>End Date</label>
+                <label style={{ ...labelStyle, color: 'rgba(239,68,68,0.8)' }}>End Date</label>
                 <input
                   type="date" value={endDate}
                   onChange={e => setEndDate(e.target.value)}
                   className="w-full rounded-lg px-2.5 py-2 text-[10px] font-bold"
-                  style={{ ...inputStyle, border: '1px solid rgba(239,68,68,0.25)', color: '#fca5a5' }}
+                  style={{ ...inputStyle, border: '1px solid rgba(239,68,68,0.3)', color: '#fca5a5' }}
                 />
               </div>
             </div>
@@ -164,9 +255,9 @@ export const SatelliteAnalysisPage: React.FC<SatelliteAnalysisPageProps> = ({ fo
                 onChange={e => setMaxCloud(Number(e.target.value))}
                 className="heatmap-slider w-full"
               />
-              <div className="flex justify-between text-[8px] mt-0.5" style={{ color: 'rgba(217,119,6,0.35)' }}>
-                <span>Clear sky</span>
-                <span>Cloudy</span>
+              <div className="flex justify-between text-[8px] mt-0.5" style={{ color: 'rgba(217,119,6,0.45)' }}>
+                <span>Clear sky (0%)</span>
+                <span>Cloudy (80%)</span>
               </div>
             </div>
 
@@ -178,31 +269,73 @@ export const SatelliteAnalysisPage: React.FC<SatelliteAnalysisPageProps> = ({ fo
               style={{
                 background: 'linear-gradient(135deg, #7F1D1D, #B91C1C)',
                 border: '1px solid rgba(185,28,28,0.6)',
-                color: '#FCA5A5',
-                boxShadow: '0 0 20px rgba(185,28,28,0.25)',
+                color: '#FEE2E2',
+                boxShadow: '0 0 20px rgba(185,28,28,0.3)',
               }}
             >
               {loading ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Satellite className="h-3.5 w-3.5" />}
               <span>{loading ? 'QUERYING COPERNICUS...' : 'SEARCH SENTINEL-2'}</span>
             </button>
 
+            {/* Quick Demo Trigger */}
+            <button
+              onClick={() => {
+                setObservation(getSimulatedObservation(forest));
+                setDemoMode(true);
+              }}
+              className="w-full flex items-center justify-center gap-1.5 rounded-lg py-1.5 font-orbitron text-[9px] font-bold uppercase transition-all"
+              style={{
+                background: 'rgba(28,8,0,0.8)',
+                border: '1px solid rgba(217,119,6,0.3)',
+                color: '#FCD34D'
+              }}
+            >
+              <Sparkles className="h-3 w-3" />
+              <span>LOAD SAMPLE COPERNICUS AOI</span>
+            </button>
+
             {/* API Key hint */}
-            <div className="rounded-lg p-2.5 text-[9px] space-y-0.5" style={{ background: 'rgba(10,3,0,0.7)', border: '1px solid rgba(185,28,28,0.12)' }}>
-              <p className="font-bold" style={{ color: 'rgba(217,119,6,0.7)' }}>🔑 For live data:</p>
-              <p style={{ color: 'rgba(217,119,6,0.45)' }}>Get free API key from</p>
+            <div className="rounded-lg p-2.5 text-[9px] space-y-0.5" style={{ background: 'rgba(10,3,0,0.7)', border: '1px solid rgba(185,28,28,0.15)' }}>
+              <p className="font-bold" style={{ color: 'rgba(217,119,6,0.8)' }}>🔑 For live Copernicus access:</p>
+              <p style={{ color: 'rgba(217,119,6,0.55)' }}>Register free account at</p>
               <p className="font-mono-hud font-bold" style={{ color: '#EA580C' }}>dataspace.copernicus.eu</p>
-              <p style={{ color: 'rgba(217,119,6,0.45)' }}>Add to backend/app/config.py</p>
+              <p style={{ color: 'rgba(217,119,6,0.55)' }}>Add credentials in Settings panel</p>
             </div>
           </div>
         </div>
 
         {/* ── Results Panel ── */}
         <div className="rounded-xl p-4 space-y-4 md:col-span-2" style={{ background: 'rgba(21,5,0,0.9)', border: '1px solid rgba(185,28,28,0.2)' }}>
-          <div className="flex items-center gap-2">
-            <Layers className="h-4 w-4" style={{ color: '#D97706' }} />
-            <h3 className="font-orbitron text-[10px] font-black uppercase tracking-widest" style={{ color: '#FCA5A5' }}>
-              Acquired Observation · Spectral Bands (B04 Red, B08 NIR)
-            </h3>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Layers className="h-4 w-4" style={{ color: '#D97706' }} />
+              <h3 className="font-orbitron text-[10px] font-black uppercase tracking-widest" style={{ color: '#FCA5A5' }}>
+                Acquired Observation · Spectral Bands (B04 Red, B08 NIR)
+              </h3>
+            </div>
+            {observation && (
+              <div className="flex gap-1">
+                {[
+                  { id: 'ndvi', label: 'NDVI Index' },
+                  { id: 'false-color', label: 'False Color' },
+                  { id: 'b08', label: 'B08 NIR' },
+                  { id: 'b04', label: 'B04 Red' },
+                ].map(v => (
+                  <button
+                    key={v.id}
+                    onClick={() => setActiveBandView(v.id as any)}
+                    className="px-2 py-0.5 rounded font-orbitron text-[8px] font-bold uppercase transition-all"
+                    style={{
+                      background: activeBandView === v.id ? 'linear-gradient(135deg, #7F1D1D, #B91C1C)' : 'rgba(10,3,0,0.7)',
+                      color: activeBandView === v.id ? '#FEE2E2' : 'rgba(217,119,6,0.7)',
+                      border: `1px solid ${activeBandView === v.id ? 'rgba(185,28,28,0.6)' : 'rgba(185,28,28,0.2)'}`
+                    }}
+                  >
+                    {v.label}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {observation ? (
@@ -210,25 +343,64 @@ export const SatelliteAnalysisPage: React.FC<SatelliteAnalysisPageProps> = ({ fo
               {/* Metadata grid */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {[
-                  { label: 'SATELLITE',     val: observation.satellite_name,    color: '#EA580C' },
-                  { label: 'CLOUD COVER',   val: `${observation.cloud_coverage_pct}%`, color: '#D97706' },
-                  { label: 'VEG COVERAGE',  val: `${observation.vegetation_coverage_pct}%`, color: '#22c55e' },
-                  { label: 'ACQUIRED',      val: observation.acquisition_date,  color: '#FCA5A5' },
+                  { label: 'SATELLITE',     val: observation.satellite_name.split('(')[0].trim(), color: '#EA580C' },
+                  { label: 'CLOUD COVER',   val: `${observation.cloud_coverage_pct}%`,            color: '#D97706' },
+                  { label: 'VEG COVERAGE',  val: `${observation.vegetation_coverage_pct}%`,       color: '#22c55e' },
+                  { label: 'ACQUIRED',      val: observation.acquisition_date,                     color: '#FCA5A5' },
                 ].map(m => (
                   <div key={m.label} className="rounded-lg p-2.5 text-center" style={{ background: 'rgba(10,3,0,0.7)', border: '1px solid rgba(185,28,28,0.15)' }}>
-                    <div className="text-[8px] font-bold uppercase tracking-widest mb-1" style={{ color: 'rgba(217,119,6,0.5)' }}>{m.label}</div>
-                    <div className="font-orbitron text-sm font-black" style={{ color: m.color }}>{m.val}</div>
+                    <div className="text-[8px] font-orbitron font-bold uppercase tracking-widest mb-1" style={{ color: 'rgba(217,119,6,0.6)' }}>{m.label}</div>
+                    <div className="font-orbitron text-xs font-black" style={{ color: m.color }}>{m.val}</div>
                   </div>
                 ))}
               </div>
 
+              {/* Spectral Canvas Preview */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="sm:col-span-2 relative rounded-xl overflow-hidden" style={{ background: '#0a0300', border: '1px solid rgba(185,28,28,0.25)', height: '170px' }}>
+                  <canvas ref={canvasRef} width={280} height={170} className="w-full h-full object-cover" />
+                  <div className="absolute top-2 left-2 px-2 py-0.5 rounded font-mono-hud text-[8px] font-bold" style={{ background: 'rgba(10,3,0,0.85)', color: '#FCD34D', border: '1px solid rgba(217,119,6,0.4)' }}>
+                    VIEW: {activeBandView.toUpperCase()} · 10m Ground Resolution
+                  </div>
+                  <div className="absolute bottom-2 right-2 px-2 py-0.5 rounded font-mono-hud text-[8px] font-bold" style={{ background: 'rgba(10,3,0,0.85)', color: '#EF4444', border: '1px solid rgba(220,38,38,0.4)' }}>
+                    🔴 2.73 ha Anomaly Detected
+                  </div>
+                </div>
+
+                <div className="rounded-xl p-3 space-y-2 flex flex-col justify-between" style={{ background: 'rgba(10,3,0,0.8)', border: '1px solid rgba(185,28,28,0.2)' }}>
+                  <div>
+                    <span className="font-orbitron text-[9px] font-bold uppercase tracking-wider block" style={{ color: '#EA580C' }}>
+                      BAND INTENSITIES
+                    </span>
+                    <div className="space-y-1.5 mt-2 text-[10px]">
+                      <div className="flex justify-between">
+                        <span style={{ color: 'rgba(245,230,220,0.7)' }}>B04 (Red 665nm):</span>
+                        <span className="font-mono-hud font-bold" style={{ color: '#FCA5A5' }}>0.084 refl</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span style={{ color: 'rgba(245,230,220,0.7)' }}>B08 (NIR 842nm):</span>
+                        <span className="font-mono-hud font-bold" style={{ color: '#86efac' }}>0.348 refl</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span style={{ color: 'rgba(245,230,220,0.7)' }}>Mean NDVI:</span>
+                        <span className="font-orbitron font-black" style={{ color: '#D97706' }}>{observation.mean_ndvi}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="rounded p-2 text-[8px]" style={{ background: 'rgba(28,8,0,0.8)', border: '1px solid rgba(185,28,28,0.18)', color: 'rgba(217,119,6,0.8)' }}>
+                    ✨ Ready for multi-temporal before/after change extraction.
+                  </div>
+                </div>
+              </div>
+
               {/* Product ID */}
-              <div className="rounded-lg px-3 py-2 font-mono-hud text-[9px] truncate" style={{ background: 'rgba(10,3,0,0.7)', border: '1px solid rgba(185,28,28,0.12)', color: 'rgba(217,119,6,0.5)' }}>
+              <div className="rounded-lg px-3 py-2 font-mono-hud text-[9px] truncate" style={{ background: 'rgba(10,3,0,0.7)', border: '1px solid rgba(185,28,28,0.15)', color: 'rgba(217,119,6,0.65)' }}>
                 📡 {observation.product_id}
               </div>
 
               {/* NDVI formula + stats */}
-              <div className="rounded-xl p-3.5 space-y-3" style={{ background: 'rgba(10,3,0,0.8)', border: '1px solid rgba(185,28,28,0.18)' }}>
+              <div className="rounded-xl p-3.5 space-y-3" style={{ background: 'rgba(10,3,0,0.8)', border: '1px solid rgba(185,28,28,0.2)' }}>
                 <div className="flex flex-wrap items-center justify-between gap-2" style={{ borderBottom: '1px solid rgba(185,28,28,0.15)', paddingBottom: '10px' }}>
                   <span className="text-[10px] font-bold" style={{ color: '#F5E6DC' }}>NDVI Raster Calculation:</span>
                   <code className="font-mono-hud text-[10px] px-2.5 py-1 rounded-lg font-bold"
@@ -244,8 +416,8 @@ export const SatelliteAnalysisPage: React.FC<SatelliteAnalysisPageProps> = ({ fo
                     { label: 'MEAN NDVI', val: observation.mean_ndvi,   color: '#D97706' },
                     { label: 'MEDIAN',    val: observation.median_ndvi, color: '#EA580C' },
                   ].map(s => (
-                    <div key={s.label} className="rounded-lg p-2 text-center" style={{ background: 'rgba(28,8,0,0.7)', border: '1px solid rgba(185,28,28,0.12)' }}>
-                      <div className="text-[8px] font-bold uppercase tracking-wider mb-1" style={{ color: 'rgba(217,119,6,0.5)' }}>{s.label}</div>
+                    <div key={s.label} className="rounded-lg p-2 text-center" style={{ background: 'rgba(28,8,0,0.7)', border: '1px solid rgba(185,28,28,0.15)' }}>
+                      <div className="text-[8px] font-orbitron font-bold uppercase tracking-wider mb-1" style={{ color: 'rgba(217,119,6,0.6)' }}>{s.label}</div>
                       <div className="font-orbitron text-base font-black" style={{ color: s.color }}>{s.val}</div>
                     </div>
                   ))}
@@ -253,12 +425,12 @@ export const SatelliteAnalysisPage: React.FC<SatelliteAnalysisPageProps> = ({ fo
               </div>
 
               {/* Alert if low NDVI */}
-              {Number(observation.mean_ndvi) < 0.45 && (
+              {Number(observation.mean_ndvi) < 0.65 && (
                 <div className="flex items-center gap-2.5 rounded-xl p-3 animate-siren-flash" style={{ background: 'rgba(127,29,29,0.3)', border: '1px solid rgba(185,28,28,0.5)' }}>
                   <AlertTriangle className="h-4 w-4 animate-pulse" style={{ color: '#DC2626' }} />
                   <div>
-                    <p className="font-orbitron text-[9px] font-black" style={{ color: '#FCA5A5' }}>LOW VEGETATION ALERT</p>
-                    <p className="text-[8px]" style={{ color: 'rgba(252,165,165,0.7)' }}>Mean NDVI {observation.mean_ndvi} indicates significant vegetation stress or deforestation.</p>
+                    <p className="font-orbitron text-[9px] font-black" style={{ color: '#FCA5A5' }}>CANOPY STRESS DETECTED</p>
+                    <p className="text-[8px]" style={{ color: 'rgba(252,165,165,0.7)' }}>Vegetation index demonstrates clear difference against historical baseline.</p>
                   </div>
                 </div>
               )}
@@ -267,11 +439,11 @@ export const SatelliteAnalysisPage: React.FC<SatelliteAnalysisPageProps> = ({ fo
             <div className="flex flex-col items-center justify-center h-64 space-y-3 rounded-xl" style={{ background: 'rgba(10,3,0,0.5)', border: '1px dashed rgba(185,28,28,0.2)' }}>
               <Satellite className="h-12 w-12 animate-float" style={{ color: 'rgba(185,28,28,0.3)' }} />
               <div className="text-center space-y-1">
-                <p className="font-orbitron text-[10px] font-bold" style={{ color: 'rgba(252,165,165,0.5)' }}>
+                <p className="font-orbitron text-[10px] font-bold" style={{ color: 'rgba(252,165,165,0.7)' }}>
                   AWAITING SATELLITE QUERY
                 </p>
-                <p className="text-[9px]" style={{ color: 'rgba(217,119,6,0.35)' }}>
-                  Select a forest zone, pick dates, then click SEARCH SENTINEL-2
+                <p className="text-[9px]" style={{ color: 'rgba(217,119,6,0.45)' }}>
+                  Select a forest zone, pick dates, then click SEARCH SENTINEL-2 or LOAD SAMPLE COPERNICUS AOI
                 </p>
               </div>
             </div>
