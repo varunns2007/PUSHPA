@@ -80,7 +80,6 @@ export const HeatmapDensity3DScene: React.FC<HeatmapDensity3DSceneProps> = ({
   } | null>(null);
 
   const [sliderDay, setSliderDay] = useState(0);   // 0=before, 100=today
-  const [hoveredCell, setHoveredCell] = useState<HeatmapCell | null>(null);
   const [cells] = useState<HeatmapCell[]>(() => generateDensityGrid());
   const [autoOrbit, setAutoOrbit] = useState(true);
   const [dispatchedCell, setDispatchedCell] = useState<HeatmapCell | null>(null);
@@ -253,7 +252,7 @@ export const HeatmapDensity3DScene: React.FC<HeatmapDensity3DSceneProps> = ({
   // ─── Mouse click raycasting ────────────────────────────────────
   const handleCanvasClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     if (!sceneRef.current || !mountRef.current) return;
-    const { renderer, camera, bars } = sceneRef.current;
+    const { camera, bars } = sceneRef.current;
     const rect = mountRef.current.getBoundingClientRect();
     const x = ((e.clientX - rect.left) / rect.width)  *  2 - 1;
     const y = -((e.clientY - rect.top)  / rect.height) *  2 + 1;

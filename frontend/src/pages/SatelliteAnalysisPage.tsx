@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import type { SatelliteObservation, ForestArea } from '../types';
-import { Satellite, Search, Layers, RefreshCw, ChevronDown, Info, AlertTriangle, ArrowRight, Eye, Sparkles } from 'lucide-react';
+import { Satellite, Search, Layers, RefreshCw, ChevronDown, Info, AlertTriangle, Sparkles } from 'lucide-react';
 import { api } from '../api/client';
 
 interface SatelliteAnalysisPageProps {
@@ -12,19 +12,19 @@ interface SatelliteAnalysisPageProps {
 // Simulated result when backend is offline
 function getSimulatedObservation(forest: ForestArea): SatelliteObservation {
   return {
+    id:                    `SAT_OBS_${forest.code}_001`,
     forest_id:             forest.id,
     satellite_name:        'Sentinel-2B (Copernicus ESA)',
     product_id:            `S2B_MSIL2A_20260901T061234_N0509_R091_T43PFS_${forest.code}`,
     acquisition_date:      '2026-09-01',
     cloud_coverage_pct:    8.4,
+    aoi_name:              forest.name,
     vegetation_coverage_pct: 67.3,
     mean_ndvi:             0.61,
     max_ndvi:              0.84,
     min_ndvi:              0.12,
     median_ndvi:           0.64,
-    ndvi_band_b04_url:     '',
-    ndvi_band_b08_url:     '',
-    ndvi_composite_url:    '',
+    processing_timestamp:  new Date().toISOString(),
   };
 }
 

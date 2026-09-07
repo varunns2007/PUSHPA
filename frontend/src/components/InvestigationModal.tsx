@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import type { Alert, ChangeEvent } from '../types';
 import { 
-  ShieldAlert, X, CheckCircle, Trees, 
-  Truck, FileCheck, Eye, Layers, Box, Check, Flame, MapPin
+  ShieldAlert, X, Trees, 
+  Truck, FileCheck, Eye, Layers, Box, Check, Flame
 } from 'lucide-react';
 
 interface InvestigationModalProps {

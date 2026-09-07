@@ -1,8 +1,8 @@
-import React, { useState, useRef } from 'react';
-import { Calendar, ArrowLeftRight, Satellite, RefreshCw, AlertTriangle, TrendingDown, ChevronDown } from 'lucide-react';
+import React, { useState } from 'react';
+import { ArrowLeftRight, Satellite, RefreshCw, AlertTriangle, TrendingDown, ChevronDown } from 'lucide-react';
 
 interface SplitComparisonMapProps {
-  forestName: string;
+  forestName?: string;
 }
 
 const FOREST_ZONES = [
@@ -34,7 +34,7 @@ function getSimulatedNDVI(before: string, after: string) {
   };
 }
 
-export const SplitComparisonMap: React.FC<SplitComparisonMapProps> = ({ forestName }) => {
+export const SplitComparisonMap: React.FC<SplitComparisonMapProps> = ({ forestName = 'Nilgiri Biosphere' }) => {
   const [sliderPos, setSliderPos]     = useState<number>(50);
   const [dateBefore, setDateBefore]   = useState<string>('2026-08-01');
   const [dateAfter, setDateAfter]     = useState<string>('2026-09-01');
@@ -57,9 +57,8 @@ export const SplitComparisonMap: React.FC<SplitComparisonMapProps> = ({ forestNa
     }, 1800);
   };
 
-  const zoneInfo = FOREST_ZONES.find(z => z.id === zone) || FOREST_ZONES[0];
+  const zoneInfo = FOREST_ZONES.find(z => z.id === zone) || { id: 'CUSTOM', name: forestName, lat: 11.5833, lng: 76.5500 };
   const r = result;
-  const lossNum = r ? Math.abs(Number(r.change)) : 0;
   const isCritical = r?.severity === 'CRITICAL';
 
   return (

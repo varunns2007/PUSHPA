@@ -1,5 +1,5 @@
 import React from 'react';
-import { AlertTriangle, Sliders, Flame, ShieldAlert } from 'lucide-react';
+import { AlertTriangle, Sliders, Flame } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell } from 'recharts';
 
 export const RiskAnalyticsPage: React.FC = () => {

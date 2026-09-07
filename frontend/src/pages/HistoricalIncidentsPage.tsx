@@ -1,6 +1,6 @@
 import React from 'react';
 import type { HistoricalIncident } from '../types';
-import { ShieldAlert, MapPin, AlertTriangle } from 'lucide-react';
+import { ShieldAlert, AlertTriangle } from 'lucide-react';
 
 interface HistoricalIncidentsPageProps {
   incidents: HistoricalIncident[];

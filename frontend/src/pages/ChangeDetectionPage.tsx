@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import type { ChangeEvent, ForestArea, ChangePolygon } from '../types';
-import { Layers, Play, AlertOctagon, CheckCircle2, Crosshair, ArrowRight } from 'lucide-react';
+import { Layers, Play, AlertOctagon, Crosshair, ArrowRight } from 'lucide-react';
 import { api } from '../api/client';
 
 interface ChangeDetectionPageProps {

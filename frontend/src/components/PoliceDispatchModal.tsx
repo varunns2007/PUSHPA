@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Polyline, CircleMarker, Tooltip, useMap } from 'react-leaflet';
 
 interface PoliceStation {
@@ -65,7 +65,6 @@ export const PoliceDispatchModal: React.FC<PoliceDispatchModalProps> = ({
   const [dispatchedTo, setDispatchedTo] = useState<string | null>(null);
   const [alertAll, setAlertAll] = useState(false);
   const [sirenOn, setSirenOn] = useState(true);
-  const audioCtxRef = useRef<AudioContext | null>(null);
 
   // Siren visual flash — stops after 3 seconds
   useEffect(() => {
