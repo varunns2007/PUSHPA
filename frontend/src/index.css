@@ -1,67 +1,429 @@
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;500;600;700;900&family=JetBrains+Mono:wght@400;700&display=swap');
 @import "tailwindcss";
 @import "leaflet/dist/leaflet.css";
 
+/* ─────────────────────────────────────────────────────────
+   BASE
+───────────────────────────────────────────────────────── */
 @layer base {
   body {
-    @apply bg-slate-950 text-slate-100 font-sans antialiased overflow-x-hidden;
-    background-image: 
-      radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.08) 0px, transparent 50%),
-      radial-gradient(at 100% 100%, rgba(239, 68, 68, 0.08) 0px, transparent 50%);
+    @apply bg-slate-950 text-slate-100 antialiased overflow-x-hidden;
+    font-family: 'Inter', sans-serif;
+    background-color: #020913;
+    background-image:
+      radial-gradient(ellipse at 0% 0%, rgba(16, 185, 129, 0.07) 0px, transparent 55%),
+      radial-gradient(ellipse at 100% 100%, rgba(239, 68, 68, 0.07) 0px, transparent 55%),
+      radial-gradient(ellipse at 50% 0%, rgba(6, 182, 212, 0.04) 0px, transparent 50%);
     background-attachment: fixed;
   }
+
+  /* Animated grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(16, 185, 129, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(16, 185, 129, 0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+    z-index: 0;
+    animation: gridDrift 30s linear infinite;
+  }
+
+  * { box-sizing: border-box; }
 }
 
-/* Custom GIS Glassmorphism */
+/* ─────────────────────────────────────────────────────────
+   TYPOGRAPHY
+───────────────────────────────────────────────────────── */
+.font-orbitron { font-family: 'Orbitron', monospace; }
+.font-mono-hud { font-family: 'JetBrains Mono', monospace; }
+
+/* ─────────────────────────────────────────────────────────
+   GLASSMORPHISM
+───────────────────────────────────────────────────────── */
 .gis-glass {
-  background: rgba(15, 23, 42, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(2, 9, 19, 0.88);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(16, 185, 129, 0.12);
 }
 
 .gis-glass-card {
-  background: rgba(30, 41, 59, 0.7);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
-/* Custom Scrollbars */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-track {
-  background: rgba(15, 23, 42, 0.6);
-}
-::-webkit-scrollbar-thumb {
-  background: rgba(51, 65, 85, 0.8);
-  border-radius: 3px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(16, 185, 129, 0.6);
+.gis-glass-card:hover {
+  border-color: rgba(16, 185, 129, 0.3);
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.08), 0 4px 24px rgba(0,0,0,0.4);
 }
 
-/* Map Pulse Radar Marker */
+.glass-police {
+  background: rgba(20, 3, 3, 0.95);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+/* ─────────────────────────────────────────────────────────
+   SCROLLBARS
+───────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: rgba(2, 9, 19, 0.6); }
+::-webkit-scrollbar-thumb { background: rgba(16, 185, 129, 0.25); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(16, 185, 129, 0.5); }
+
+/* ─────────────────────────────────────────────────────────
+   ANIMATIONS — KEYFRAMES
+───────────────────────────────────────────────────────── */
+
+/* Grid background drift */
+@keyframes gridDrift {
+  0%   { background-position: 0 0; }
+  100% { background-position: 60px 60px; }
+}
+
+/* Fade + slide up entrance */
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Fade + slide in from right */
+@keyframes fadeSlideRight {
+  from { opacity: 0; transform: translateX(24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* Glow pulse — green */
+@keyframes glowPulseGreen {
+  0%, 100% { box-shadow: 0 0 8px rgba(16, 185, 129, 0.4), 0 0 24px rgba(16, 185, 129, 0.1); }
+  50%       { box-shadow: 0 0 16px rgba(16, 185, 129, 0.8), 0 0 48px rgba(16, 185, 129, 0.2); }
+}
+
+/* Glow pulse — red */
+@keyframes glowPulseRed {
+  0%, 100% { box-shadow: 0 0 8px rgba(239, 68, 68, 0.4), 0 0 24px rgba(239, 68, 68, 0.15); }
+  50%       { box-shadow: 0 0 20px rgba(239, 68, 68, 0.9), 0 0 60px rgba(239, 68, 68, 0.3); }
+}
+
+/* Shimmer sweep */
+@keyframes shimmer {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+
+/* Scanline sweep */
+@keyframes scanLine {
+  0%   { top: -4px; opacity: 0.8; }
+  100% { top: 100%; opacity: 0; }
+}
+
+/* Radar sweep ring */
+@keyframes radarSweep {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* Beacon ring expand */
+@keyframes beaconRing {
+  0%   { transform: scale(1); opacity: 1; }
+  100% { transform: scale(2.4); opacity: 0; }
+}
+
+/* Police siren flash */
+@keyframes sirenFlash {
+  0%, 100% { background-color: rgba(239, 68, 68, 0.15); }
+  50%       { background-color: rgba(239, 68, 68, 0.35); }
+}
+
+/* Pulse red dot */
+@keyframes pulse-red {
+  0%   { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+  70%  { transform: scale(1.3);  box-shadow: 0 0 0 14px rgba(239, 68, 68, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+/* 3D bar rise */
+@keyframes barRise {
+  from { transform: scaleY(0); }
+  to   { transform: scaleY(1); }
+}
+
+/* Alert slide-in from right */
+@keyframes alertSlideIn {
+  from { opacity: 0; transform: translateX(40px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* Counter number roll */
+@keyframes counterFlash {
+  0%   { opacity: 0.3; transform: scale(0.9); }
+  50%  { opacity: 1;   transform: scale(1.05); }
+  100% { opacity: 1;   transform: scale(1); }
+}
+
+/* Dispatch spinner */
+@keyframes dispatchSpin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* Float up-down (3D scene camera hint) */
+@keyframes floatUpDown {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-6px); }
+}
+
+/* ─────────────────────────────────────────────────────────
+   ANIMATION UTILITY CLASSES
+───────────────────────────────────────────────────────── */
+.animate-fade-slide-up   { animation: fadeSlideUp   0.5s ease both; }
+.animate-fade-slide-right{ animation: fadeSlideRight 0.4s ease both; }
+.animate-glow-green      { animation: glowPulseGreen 2.4s ease-in-out infinite; }
+.animate-glow-red        { animation: glowPulseRed   1.5s ease-in-out infinite; }
+.animate-beacon-ring     { animation: beaconRing 1.8s ease-out infinite; }
+.animate-siren-flash     { animation: sirenFlash 0.6s ease-in-out infinite; }
+.animate-alert-slide     { animation: alertSlideIn 0.35s ease both; }
+.animate-dispatch-spin   { animation: dispatchSpin 1s linear infinite; }
+.animate-float           { animation: floatUpDown 3s ease-in-out infinite; }
+.animate-counter-flash   { animation: counterFlash 0.5s ease both; }
+.animate-bar-rise        { animation: barRise 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+
+/* Staggered delays */
+.delay-100 { animation-delay: 100ms; }
+.delay-150 { animation-delay: 150ms; }
+.delay-200 { animation-delay: 200ms; }
+.delay-250 { animation-delay: 250ms; }
+.delay-300 { animation-delay: 300ms; }
+.delay-400 { animation-delay: 400ms; }
+.delay-500 { animation-delay: 500ms; }
+.delay-600 { animation-delay: 600ms; }
+
+/* ─────────────────────────────────────────────────────────
+   HUD SCANLINE OVERLAY
+───────────────────────────────────────────────────────── */
+.hud-scanline {
+  position: relative;
+  overflow: hidden;
+}
+.hud-scanline::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, rgba(16, 185, 129, 0.6), transparent);
+  animation: scanLine 4s linear infinite;
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* ─────────────────────────────────────────────────────────
+   SHIMMER CARD
+───────────────────────────────────────────────────────── */
+.shimmer-card {
+  position: relative;
+  overflow: hidden;
+}
+.shimmer-card::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 40%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.04), transparent);
+  animation: shimmer 3s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* ─────────────────────────────────────────────────────────
+   RADAR SWEEP ELEMENT
+───────────────────────────────────────────────────────── */
+.radar-sweep {
+  position: relative;
+  border-radius: 50%;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+.radar-sweep::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, rgba(16, 185, 129, 0.5) 0deg, transparent 60deg, transparent 360deg);
+  animation: radarSweep 3s linear infinite;
+}
+
+/* ─────────────────────────────────────────────────────────
+   MAP PULSE RADAR MARKER
+───────────────────────────────────────────────────────── */
 .pulse-radar-marker {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
   background: #ef4444;
   box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
   animation: pulse-red 1.5s infinite;
 }
 
-@keyframes pulse-red {
-  0% {
-    transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
-  }
-  70% {
-    transform: scale(1.3);
-    box-shadow: 0 0 0 14px rgba(239, 68, 68, 0);
-  }
-  100% {
-    transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
-  }
+/* ─────────────────────────────────────────────────────────
+   POLICE DISPATCH OVERLAY
+───────────────────────────────────────────────────────── */
+.police-dispatch-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.87);
+  backdrop-filter: blur(8px);
+  animation: sirenFlash 0.6s ease-in-out 3;
+}
+
+.police-dispatch-panel {
+  position: relative;
+  max-width: 900px;
+  width: 95vw;
+  max-height: 90vh;
+  overflow-y: auto;
+  border: 2px solid rgba(239, 68, 68, 0.6);
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(20,3,3,0.98) 0%, rgba(10,2,2,0.99) 100%);
+  box-shadow: 0 0 60px rgba(239,68,68,0.3), 0 0 120px rgba(239,68,68,0.1);
+  animation: glowPulseRed 1.5s ease-in-out infinite;
+}
+
+/* ─────────────────────────────────────────────────────────
+   NEON TEXT GLOW
+───────────────────────────────────────────────────────── */
+.text-glow-green {
+  text-shadow: 0 0 10px rgba(16, 185, 129, 0.8), 0 0 30px rgba(16, 185, 129, 0.3);
+}
+.text-glow-red {
+  text-shadow: 0 0 10px rgba(239, 68, 68, 0.9), 0 0 30px rgba(239, 68, 68, 0.4);
+}
+.text-glow-cyan {
+  text-shadow: 0 0 10px rgba(6, 182, 212, 0.8), 0 0 30px rgba(6, 182, 212, 0.3);
+}
+
+/* ─────────────────────────────────────────────────────────
+   STAT CARD GLOW BORDER
+───────────────────────────────────────────────────────── */
+.stat-card-critical {
+  border-color: rgba(239, 68, 68, 0.4) !important;
+  box-shadow: 0 0 16px rgba(239, 68, 68, 0.1);
+}
+.stat-card-warning {
+  border-color: rgba(245, 158, 11, 0.4) !important;
+  box-shadow: 0 0 16px rgba(245, 158, 11, 0.08);
+}
+
+/* ─────────────────────────────────────────────────────────
+   3D HEATMAP HUD PANEL
+───────────────────────────────────────────────────────── */
+.heatmap-hud {
+  background: rgba(2, 9, 19, 0.92);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  border-radius: 10px;
+  backdrop-filter: blur(12px);
+}
+
+/* ─────────────────────────────────────────────────────────
+   SLIDER CUSTOM STYLE
+───────────────────────────────────────────────────────── */
+input[type="range"].heatmap-slider {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 4px;
+  background: linear-gradient(90deg, rgba(239,68,68,0.4), rgba(245,158,11,0.4), rgba(16,185,129,0.4));
+  border-radius: 4px;
+  outline: none;
+}
+input[type="range"].heatmap-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #10b981, #06b6d4);
+  border: 2px solid rgba(255,255,255,0.3);
+  cursor: pointer;
+  box-shadow: 0 0 8px rgba(16,185,129,0.6);
+}
+
+/* ─────────────────────────────────────────────────────────
+   BUTTON EFFECTS
+───────────────────────────────────────────────────────── */
+.btn-dispatch {
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+  border: 1px solid rgba(239,68,68,0.5);
+  color: white;
+  font-weight: 800;
+  font-family: 'Orbitron', monospace;
+  letter-spacing: 0.08em;
+  padding: 10px 20px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+  font-size: 11px;
+  box-shadow: 0 4px 20px rgba(220,38,38,0.4);
+}
+.btn-dispatch:hover {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  box-shadow: 0 6px 28px rgba(239,68,68,0.6);
+  transform: translateY(-1px);
+}
+.btn-dispatch:active { transform: translateY(0px); }
+
+.btn-alert-all {
+  background: linear-gradient(135deg, #92400e, #78350f);
+  border: 1px solid rgba(245,158,11,0.4);
+  color: #fbbf24;
+  font-weight: 800;
+  font-family: 'Orbitron', monospace;
+  letter-spacing: 0.08em;
+  padding: 10px 20px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+  font-size: 11px;
+}
+.btn-alert-all:hover {
+  background: linear-gradient(135deg, #b45309, #92400e);
+  transform: translateY(-1px);
+}
+
+.btn-ghost {
+  background: rgba(30,41,59,0.7);
+  border: 1px solid rgba(71,85,105,0.5);
+  color: #94a3b8;
+  font-weight: 600;
+  padding: 10px 16px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 11px;
+}
+.btn-ghost:hover {
+  background: rgba(51,65,85,0.9);
+  color: #e2e8f0;
+}
+
+/* ─────────────────────────────────────────────────────────
+   RECHARTS CUSTOM
+───────────────────────────────────────────────────────── */
+.recharts-cartesian-axis-tick-value { fill: #64748b; font-size: 10px; }
+.recharts-tooltip-wrapper { outline: none; }
+
+/* ─────────────────────────────────────────────────────────
+   LEAFLET OVERRIDES (dark map)
+───────────────────────────────────────────────────────── */
+.leaflet-container { background: #020913 !important; }
+.leaflet-control-attribution { display: none !important; }
+.leaflet-control-zoom a {
+  background: rgba(2,9,19,0.9) !important;
+  color: #10b981 !important;
+  border-color: rgba(16,185,129,0.3) !important;
 }
