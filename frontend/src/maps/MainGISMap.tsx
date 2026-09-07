@@ -100,7 +100,7 @@ export const MainGISMap: React.FC<MainGISMapProps> = ({
   };
 
   return (
-    <div className="relative h-full w-full rounded-xl overflow-hidden border border-slate-800 shadow-2xl">
+    <div className="relative h-full w-full rounded-xl overflow-hidden shadow-2xl" style={{ border: '1px solid rgba(185,28,28,0.3)' }}>
       <MapContainer
         center={defaultCenter}
         zoom={11}
@@ -178,19 +178,19 @@ export const MainGISMap: React.FC<MainGISMapProps> = ({
             key={f.id}
             positions={f.polygon_coordinates.map(pt => [pt[1], pt[0]]) as [number, number][]}
             pathOptions={{
-              color: '#10b981',
-              weight: 2.5,
-              fillColor: '#10b981',
-              fillOpacity: 0.15,
-              dashArray: '5, 5'
+              color: '#EA580C',
+              weight: 2,
+              fillColor: '#EA580C',
+              fillOpacity: 0.08,
+              dashArray: '6, 5'
             }}
           >
             <Popup className="custom-gis-popup">
-              <div className="p-1 space-y-1 text-slate-900 font-sans">
-                <h4 className="font-extrabold text-xs text-emerald-800">{f.name}</h4>
-                <p className="text-[11px] font-medium">Total Area: {f.total_area_ha} ha</p>
-                <p className="text-[11px]">Dense Canopy Coverage: {f.dense_veg_pct}%</p>
-                <p className="text-[11px] font-bold text-red-600">Investigation Risk: {f.current_risk_score}/100</p>
+              <div className="p-2 space-y-1 font-sans" style={{ background: 'transparent' }}>
+                <h4 style={{ color: '#FCA5A5', fontWeight: 900, fontSize: '11px' }}>🌿 {f.name}</h4>
+                <p style={{ color: '#F5E6DC', fontSize: '10px' }}>Area: <strong>{f.total_area_ha} ha</strong></p>
+                <p style={{ color: '#F5E6DC', fontSize: '10px' }}>Dense Canopy: <strong>{f.dense_veg_pct}%</strong></p>
+                <p style={{ color: '#FCA5A5', fontWeight: 800, fontSize: '10px' }}>⚠ Risk Score: {f.current_risk_score}/100</p>
               </div>
             </Popup>
           </Polygon>
@@ -312,18 +312,29 @@ export const MainGISMap: React.FC<MainGISMapProps> = ({
       </MapContainer>
 
       {/* Floating Map Legend */}
-      <div className="absolute bottom-3 left-3 z-[400] gis-glass px-3 py-2 rounded-xl border border-slate-800 text-[11px] flex items-center space-x-3 shadow-xl">
-        <span className="flex items-center text-emerald-400 font-bold">
-          <span className="h-3 w-3 rounded-full bg-emerald-500 mr-1.5 opacity-80"></span>
-          Dense Tree Canopy
+      <div
+        className="absolute bottom-3 left-3 z-[400] px-3 py-2 rounded-xl text-[10px] flex items-center gap-3 shadow-2xl"
+        style={{
+          background: 'rgba(10,3,0,0.92)',
+          border: '1px solid rgba(185,28,28,0.25)',
+          backdropFilter: 'blur(12px)',
+        }}
+      >
+        <span className="flex items-center gap-1.5 font-semibold" style={{ color: '#22c55e' }}>
+          <span className="h-2.5 w-2.5 rounded-full flex-shrink-0" style={{ background: '#22c55e', boxShadow: '0 0 5px #22c55e80' }} />
+          Dense Canopy
         </span>
-        <span className="flex items-center text-red-400 font-bold">
-          <span className="h-3 w-3 rounded-full bg-red-600 mr-1.5 animate-pulse"></span>
-          Trees Cut / Deforestation
+        <span className="flex items-center gap-1.5 font-semibold" style={{ color: '#ef4444' }}>
+          <span className="h-2.5 w-2.5 rounded-full flex-shrink-0 animate-pulse" style={{ background: '#ef4444', boxShadow: '0 0 5px #ef444480' }} />
+          Trees Cut
         </span>
-        <span className="flex items-center text-blue-400 font-bold">
-          <span className="h-2 w-4 bg-blue-500 mr-1.5"></span>
-          Forest Route
+        <span className="flex items-center gap-1.5 font-semibold" style={{ color: '#EA580C' }}>
+          <span className="h-2 w-5 rounded-sm flex-shrink-0" style={{ background: 'rgba(234,88,12,0.4)', border: '1px dashed rgba(234,88,12,0.6)' }} />
+          Forest Boundary
+        </span>
+        <span className="flex items-center gap-1.5 font-semibold" style={{ color: '#60a5fa' }}>
+          <span className="h-1.5 w-5 flex-shrink-0" style={{ background: '#60a5fa50', borderTop: '2px dashed #60a5fa' }} />
+          Road Route
         </span>
       </div>
     </div>

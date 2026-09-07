@@ -148,9 +148,9 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                style={{ animationDelay: `${i * 35}ms` }}
-                className={`flex items-center space-x-1.5 rounded-lg px-3 py-2 text-[10px] font-semibold transition-all duration-200 whitespace-nowrap group`}
+                className="flex items-center space-x-1.5 rounded-lg px-3 py-2 text-[10px] font-semibold transition-all duration-200 whitespace-nowrap group"
                 style={active ? {
+                  animationDelay: `${i * 35}ms`,
                   background: 'linear-gradient(135deg, #7F1D1D, #991B1B)',
                   color: '#FCA5A5',
                   fontFamily: 'Orbitron, monospace',
@@ -158,6 +158,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   border: '1px solid rgba(185,28,28,0.5)',
                   boxShadow: '0 2px 12px rgba(185,28,28,0.4)',
                 } : {
+                  animationDelay: `${i * 35}ms`,
                   color: 'rgba(217,119,6,0.6)',
                   border: '1px solid transparent',
                 }}
