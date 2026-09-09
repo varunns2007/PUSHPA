@@ -1,74 +1,88 @@
+from __future__ import annotations
+
 import math
-from typing import Dict, Any, List, Optional
-from shapely.geometry import Point, LineString, Polygon
-from app.database.models import Vehicle, ChangePolygon, TimberPermit
+from datetime import datetime
+from typing import Any
 
-class VehicleTracker:
-    @staticmethod
-    def haversine_distance_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
-        R = 6371.0
-        dlat = math.radians(lat2 - lat1)
-        dlon = math.radians(lon2 - lon1)
-        a = math.sin(dlat / 2.0)**2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon / 2.0)**2
-        c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
-        return R * c
+PROXIMITY_ALERT_KM = 3.0
+NIGHT_START_HOUR = 0
+NIGHT_END_HOUR = 4
 
-    def analyze_vehicle_route(
-        self,
-        vehicle: Vehicle,
-        change_polygons: List[ChangePolygon],
-        permit: Optional[TimberPermit]
-    ) -> Dict[str, Any]:
-        """
-        Analyzes vehicle route against forest change polygons and timber permits.
-        Outputs Route Anomaly Score and spatial correlation.
-        """
-        min_dist_km = 999.0
-        nearest_poly_id = None
-        
-        for poly in change_polygons:
-            d = self.haversine_distance_km(
-                vehicle.current_lat, vehicle.current_lng,
-                poly.centroid_lat, poly.centroid_lng
-            )
-            if d < min_dist_km:
-                min_dist_km = d
-                nearest_poly_id = poly.id
+# Roughly-known legal highway transit corridors (demo waypoints). A vehicle
+# whose nearest distance to every corridor exceeds ROUTE_TOLERANCE_KM is
+# flagged as travelling an unmonitored interior track.
+LEGAL_CORRIDORS: list[list[tuple[float, float]]] = [
+    [(11.30, 76.60), (11.40, 76.70), (11.50, 76.80)],   # NH near Nilgiri
+    [(10.90, 76.95), (10.97, 76.98), (11.05, 77.02)],   # NH near Anamalai
+    [(9.40, 77.20), (9.46, 77.24), (9.52, 77.28)],       # SH near Periyar
+]
+ROUTE_TOLERANCE_KM = 4.0
 
-        # Route Anomaly evaluation
-        route_anomaly_score = 0
-        reasons = []
 
-        # Permit check
-        permit_anomaly = False
-        if not permit or permit.status != "VALID":
-            permit_anomaly = True
-            route_anomaly_score += 40
-            reasons.append("Vehicle operating without valid timber transport permit")
-        
-        # Proximity to change event
-        if min_dist_km <= 3.0:
-            route_anomaly_score += 35
-            reasons.append(f"Vehicle located within {min_dist_km:.2f} km of detected forest clearing polygon ({nearest_poly_id})")
-        elif min_dist_km <= 8.0:
-            route_anomaly_score += 15
-            reasons.append(f"Vehicle on peripheral route {min_dist_km:.2f} km from change zone")
+def haversine_km(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
+    r = 6371.0
+    p1, p2 = math.radians(lat1), math.radians(lat2)
+    dphi = math.radians(lat2 - lat1)
+    dlambda = math.radians(lng2 - lng1)
+    a = math.sin(dphi / 2) ** 2 + math.cos(p1) * math.cos(p2) * math.sin(dlambda / 2) ** 2
+    return 2 * r * math.asin(math.sqrt(a))
 
-        # Off-hours or unverified destination
-        if "Unregistered" in vehicle.destination or "Warehouse B" in vehicle.destination:
-            route_anomaly_score += 25
-            reasons.append("Vehicle heading towards unregistered non-licensed timber destination")
 
-        route_anomaly_score = min(100, route_anomaly_score)
+def _distance_to_segment_km(lat: float, lng: float, a: tuple[float, float], b: tuple[float, float]) -> float:
+    # approximate by sampling the segment — adequate at this scale/precision
+    steps = 12
+    best = float("inf")
+    for i in range(steps + 1):
+        t = i / steps
+        plat = a[0] + (b[0] - a[0]) * t
+        plng = a[1] + (b[1] - a[1]) * t
+        best = min(best, haversine_km(lat, lng, plat, plng))
+    return best
 
-        return {
-            "vehicle_id": vehicle.id,
-            "min_distance_to_change_km": round(min_dist_km, 2),
-            "nearest_polygon_id": nearest_poly_id,
-            "permit_status": permit.status if permit else "NOT_FOUND",
-            "route_anomaly_score": route_anomaly_score,
-            "route_deviation_level": "High" if route_anomaly_score > 60 else ("Moderate" if route_anomaly_score > 30 else "Low"),
-            "reasons": reasons
-        }
 
-vehicle_tracker = VehicleTracker()
+def distance_to_nearest_corridor_km(lat: float, lng: float) -> float:
+    best = float("inf")
+    for corridor in LEGAL_CORRIDORS:
+        for a, b in zip(corridor, corridor[1:]):
+            best = min(best, _distance_to_segment_km(lat, lng, a, b))
+    return round(best, 2)
+
+
+def analyze_vehicle(
+    vehicle: dict[str, Any],
+    change_polygons: list[dict[str, Any]],
+    now: datetime | None = None,
+) -> dict[str, Any]:
+    now = now or datetime.utcnow()
+    lat, lng = vehicle["lat"], vehicle["lng"]
+
+    nearest_polygon = None
+    nearest_km = float("inf")
+    for poly in change_polygons:
+        d = haversine_km(lat, lng, poly["centroid"]["lat"], poly["centroid"]["lng"])
+        if d < nearest_km:
+            nearest_km = d
+            nearest_polygon = poly
+
+    flags: list[str] = []
+    if nearest_polygon and nearest_km <= PROXIMITY_ALERT_KM:
+        flags.append("INSIDE_CHANGE_BUFFER")
+
+    corridor_km = distance_to_nearest_corridor_km(lat, lng)
+    if corridor_km > ROUTE_TOLERANCE_KM:
+        flags.append("OFF_ROUTE_TRANSIT")
+
+    hour = now.hour
+    if NIGHT_START_HOUR <= hour < NIGHT_END_HOUR:
+        flags.append("NOCTURNAL_MOVEMENT")
+
+    if vehicle.get("speed_kmh", 0) > 80:
+        flags.append("UNUSUAL_SPEED")
+
+    return {
+        "vehicle_id": vehicle["vehicle_id"],
+        "nearest_change_polygon": nearest_polygon["polygon_id"] if nearest_polygon else None,
+        "distance_to_change_km": round(nearest_km, 2) if nearest_polygon else None,
+        "distance_to_legal_corridor_km": corridor_km,
+        "flags": flags,
+    }

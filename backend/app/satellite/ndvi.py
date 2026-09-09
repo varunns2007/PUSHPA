@@ -1,39 +1,36 @@
+from __future__ import annotations
+
 import numpy as np
-from typing import Dict, Any, Tuple
 
-class NDVICalculator:
-    @staticmethod
-    def calculate_ndvi_matrix(b04: np.ndarray, b08: np.ndarray) -> np.ndarray:
-        """
-        Calculates NDVI = (B08 - B04) / (B08 + B04)
-        Clips output to [-1.0, 1.0].
-        """
-        denominator = b08 + b04
-        # Avoid division by zero
-        denominator = np.where(denominator == 0, 1e-6, denominator)
-        ndvi = (b08 - b04) / denominator
-        return np.clip(ndvi, -1.0, 1.0)
+# NDVI classification tiers, per the PUSHPA spec.
+TIERS = [
+    (0.0, 0.2, "BARE_SOIL_CLEARED"),
+    (0.2, 0.4, "SPARSE_VEGETATION"),
+    (0.4, 0.6, "MODERATE_DECIDUOUS"),
+    (0.6, 0.8, "DENSE_EVERGREEN"),
+    (0.8, 1.01, "PRISTINE_HIGH_CANOPY"),
+]
 
-    @staticmethod
-    def calculate_metrics(ndvi_matrix: np.ndarray, non_veg_threshold: float = 0.20) -> Dict[str, float]:
-        """
-        Calculates statistical summary of an NDVI matrix.
-        """
-        min_val = float(np.min(ndvi_matrix))
-        max_val = float(np.max(ndvi_matrix))
-        mean_val = float(np.mean(ndvi_matrix))
-        median_val = float(np.median(ndvi_matrix))
-        
-        veg_pixels = np.sum(ndvi_matrix >= non_veg_threshold)
-        total_pixels = ndvi_matrix.size
-        veg_pct = float((veg_pixels / total_pixels) * 100.0) if total_pixels > 0 else 0.0
-        
-        return {
-            "min_ndvi": round(min_val, 4),
-            "max_ndvi": round(max_val, 4),
-            "mean_ndvi": round(mean_val, 4),
-            "median_ndvi": round(median_val, 4),
-            "vegetation_coverage_pct": round(veg_pct, 2)
-        }
 
-ndvi_calculator = NDVICalculator()
+def compute_ndvi(b04_red: np.ndarray, b08_nir: np.ndarray) -> np.ndarray:
+    """NDVI = (NIR - Red) / (NIR + Red), safe against zero-division."""
+    denom = b08_nir + b04_red
+    denom = np.where(denom == 0, 1e-6, denom)
+    ndvi = (b08_nir - b04_red) / denom
+    return np.clip(ndvi, -1.0, 1.0)
+
+
+def classify_tier(value: float) -> str:
+    for lo, hi, label in TIERS:
+        if lo <= value < hi:
+            return label
+    return "PRISTINE_HIGH_CANOPY" if value >= 0.8 else "BARE_SOIL_CLEARED"
+
+
+def tier_histogram(ndvi: np.ndarray) -> list[dict]:
+    total = ndvi.size
+    out = []
+    for lo, hi, label in TIERS:
+        count = int(np.sum((ndvi >= lo) & (ndvi < hi)))
+        out.append({"tier": label, "range": [lo, min(hi, 1.0)], "pixel_count": count, "pct": round(100 * count / total, 2)})
+    return out

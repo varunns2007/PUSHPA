@@ -1,75 +1,81 @@
-import React from 'react';
-import type { TimberPermit } from '../types';
-import { FileCheck } from 'lucide-react';
+import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import BackendBadge from "../components/Backend/BackendBadge";
+import { listPermits } from "../api/client";
+import { PERMITS_DEMO, type PermitRecord } from "../data/mockData";
 
-interface TimberPermitsPageProps {
-  permits: TimberPermit[];
-}
+const STATUS_COLOR: Record<string, string> = {
+  VALID: "var(--color-forest-400)",
+  UNPERMITTED: "var(--color-earth-500)",
+  EXPIRED: "var(--color-earth-400)",
+  ROUTE_MISMATCH: "var(--color-gold-500)",
+  SPECIES_MISMATCH: "var(--color-gold-500)",
+  OVERWEIGHT: "var(--color-gold-500)",
+};
 
-export const TimberPermitsPage: React.FC<TimberPermitsPageProps> = ({ permits }) => {
+export default function TimberPermitsPage() {
+  const [permits, setPermits] = useState<PermitRecord[]>(PERMITS_DEMO);
+
+  useEffect(() => {
+    listPermits().then((res) => {
+      if (res.ok) setPermits(res.data.permits);
+    });
+  }, []);
+
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between gis-glass p-4 rounded-xl border border-slate-800">
-        <div className="flex items-center space-x-2">
-          <FileCheck className="h-5 w-5 text-emerald-400" />
-          <div>
-            <h2 className="text-base font-black uppercase tracking-wider text-slate-100">
-              LEGAL TIMBER PERMIT DATABASE
-            </h2>
-            <p className="text-xs text-slate-400">
-              Authorized timber harvest & transport permits registered under state forest departments
-            </p>
-          </div>
+    <div className="h-full overflow-y-auto p-4">
+      <div className="mb-4 flex items-center justify-between">
+        <div>
+          <h1 className="font-display text-lg tracking-wide text-ash-100">Timber Permit Registry</h1>
+          <p className="mt-0.5 font-mono text-[11px] text-ash-500">Digital transit permit verification</p>
         </div>
-        <span className="rounded-full bg-emerald-950 px-3 py-1 text-xs font-bold text-emerald-400 border border-emerald-800">
-          {permits.length} REGISTERED PERMITS
-        </span>
+        <BackendBadge />
       </div>
 
-      <div className="gis-glass rounded-xl p-4 border border-slate-800 space-y-3">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse">
-            <thead>
-              <tr className="border-b border-slate-800 bg-slate-900/80 text-slate-400 font-bold uppercase text-[10px]">
-                <th className="p-3">Permit ID</th>
-                <th className="p-3">Vehicle ID</th>
-                <th className="p-3">Harvest Source</th>
-                <th className="p-3">Destination Depot</th>
-                <th className="p-3">Approved Area</th>
-                <th className="p-3">Quota (m³)</th>
-                <th className="p-3">Validity Window</th>
-                <th className="p-3 text-right">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800/60 font-medium">
-              {permits.map((p) => (
-                <tr key={p.permit_id} className="hover:bg-slate-900/90 transition-colors">
-                  <td className="p-3 font-mono font-bold text-emerald-400">{p.permit_id}</td>
-                  <td className="p-3 font-mono text-slate-200">{p.vehicle_id}</td>
-                  <td className="p-3 text-slate-300">{p.source_location}</td>
-                  <td className="p-3 text-slate-300">{p.destination}</td>
-                  <td className="p-3 text-slate-400">{p.approved_area}</td>
-                  <td className="p-3 font-bold text-amber-400">{p.approved_quantity_m3} m³</td>
-                  <td className="p-3 font-mono text-slate-400">
-                    {p.valid_from} → {p.valid_until}
-                  </td>
-                  <td className="p-3 text-right">
-                    {p.status === 'VALID' ? (
-                      <span className="rounded bg-emerald-950 px-2.5 py-1 text-[10px] font-bold text-emerald-400 border border-emerald-800">
-                        ✅ VALID
-                      </span>
-                    ) : (
-                      <span className="rounded bg-amber-950 px-2.5 py-1 text-[10px] font-bold text-amber-400 border border-amber-800">
-                        ⚠️ {p.status}
-                      </span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      <div className="overflow-hidden border border-line/70">
+        <table className="w-full text-left font-mono text-[11px]">
+          <thead>
+            <tr className="border-b border-line/70 bg-panel/60 text-ash-500">
+              <th className="px-3 py-2 font-normal">VEHICLE</th>
+              <th className="px-3 py-2 font-normal">PERMIT ID</th>
+              <th className="px-3 py-2 font-normal">HOLDER</th>
+              <th className="px-3 py-2 font-normal">SPECIES</th>
+              <th className="px-3 py-2 font-normal">EXPIRY</th>
+              <th className="px-3 py-2 font-normal">STATUS</th>
+            </tr>
+          </thead>
+          <tbody>
+            {permits.map((p, i) => (
+              <motion.tr
+                key={p.vehicle_id}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.06 }}
+                className="border-b border-line/50 last:border-0 hover:bg-panel/40"
+              >
+                <td className="px-3 py-2 text-ash-100">#{p.vehicle_id}</td>
+                <td className="px-3 py-2 text-ash-300">{p.permit_id ?? "—"}</td>
+                <td className="px-3 py-2 text-ash-300">{p.holder ?? "—"}</td>
+                <td className="px-3 py-2 text-ash-300">{p.authorized_species ?? "—"}</td>
+                <td className="px-3 py-2 text-ash-300">{p.expiry ?? "—"}</td>
+                <td className="px-3 py-2">
+                  <span
+                    className="rounded-sm px-1.5 py-0.5 text-[10px] tracking-wider"
+                    style={{ color: STATUS_COLOR[p.status] ?? "var(--color-ash-300)", border: `1px solid ${STATUS_COLOR[p.status] ?? "var(--color-line)"}66` }}
+                  >
+                    {p.status}
+                  </span>
+                </td>
+              </motion.tr>
+            ))}
+          </tbody>
+        </table>
       </div>
+
+      <p className="mt-4 max-w-2xl font-mono text-[11px] leading-relaxed text-ash-500">
+        Permit checks validate expiry date, species authorization, approved transit corridor, and declared payload
+        against the digital timber registry. This is a demonstration registry with a handful of seeded vehicles.
+      </p>
     </div>
   );
-};
+}

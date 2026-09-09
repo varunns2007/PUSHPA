@@ -1,41 +1,27 @@
+from __future__ import annotations
+
 import numpy as np
-from typing import Dict, Any
 
-class ForestDensityAnalyzer:
-    def __init__(self, non_veg: float = 0.20, sparse: float = 0.40, moderate: float = 0.60):
-        self.non_veg = non_veg
-        self.sparse = sparse
-        self.moderate = moderate
+from app.satellite import ndvi as ndvi_mod
 
-    def classify_density(self, ndvi_matrix: np.ndarray) -> np.ndarray:
-        """
-        Classifies pixels:
-        0 = Non-vegetation
-        1 = Sparse vegetation
-        2 = Moderate vegetation
-        3 = Dense vegetation
-        """
-        classified = np.zeros(ndvi_matrix.shape, dtype=int)
-        classified[(ndvi_matrix >= self.non_veg) & (ndvi_matrix < self.sparse)] = 1
-        classified[(ndvi_matrix >= self.sparse) & (ndvi_matrix < self.moderate)] = 2
-        classified[ndvi_matrix >= self.moderate] = 3
-        return classified
 
-    def calculate_density_stats(self, ndvi_matrix: np.ndarray) -> Dict[str, float]:
-        total = ndvi_matrix.size
-        if total == 0:
-            return {"non_veg_pct": 0, "sparse_pct": 0, "moderate_pct": 0, "dense_pct": 0}
-        
-        non_veg_count = np.sum(ndvi_matrix < self.non_veg)
-        sparse_count = np.sum((ndvi_matrix >= self.non_veg) & (ndvi_matrix < self.sparse))
-        moderate_count = np.sum((ndvi_matrix >= self.sparse) & (ndvi_matrix < self.moderate))
-        dense_count = np.sum(ndvi_matrix >= self.moderate)
+def analyze_density(ndvi: np.ndarray) -> dict:
+    mean_ndvi = float(np.mean(ndvi))
+    canopy_density_pct = round(max(0.0, min(1.0, (mean_ndvi + 1) / 2)) * 100, 1)
+    return {
+        "mean_ndvi": round(mean_ndvi, 4),
+        "canopy_density_pct": canopy_density_pct,
+        "vegetation_health_index": round(float(np.mean(np.clip(ndvi, 0, 1))), 3),
+        "tiers": ndvi_mod.tier_histogram(ndvi),
+        "grid_size": ndvi.shape[0],
+        # downsampled preview grid so the frontend can render a heatmap without
+        # shipping the full raster
+        "preview": _downsample(ndvi, 16).tolist(),
+    }
 
-        return {
-            "non_veg_pct": round(float(non_veg_count / total) * 100, 2),
-            "sparse_pct": round(float(sparse_count / total) * 100, 2),
-            "moderate_pct": round(float(moderate_count / total) * 100, 2),
-            "dense_pct": round(float(dense_count / total) * 100, 2),
-        }
 
-density_analyzer = ForestDensityAnalyzer()
+def _downsample(arr: np.ndarray, target: int) -> np.ndarray:
+    factor = max(1, arr.shape[0] // target)
+    trimmed = arr[: (arr.shape[0] // factor) * factor, : (arr.shape[1] // factor) * factor]
+    reshaped = trimmed.reshape(trimmed.shape[0] // factor, factor, trimmed.shape[1] // factor, factor)
+    return reshaped.mean(axis=(1, 3)).round(3)

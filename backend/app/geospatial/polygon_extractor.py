@@ -1,104 +1,88 @@
+from __future__ import annotations
+
+from typing import Any
+
 import numpy as np
-import cv2
-from typing import List, Dict, Any, Tuple
-from shapely.geometry import Polygon, MultiPolygon
-from shapely.ops import transform
-import pyproj
+from scipy import ndimage
 
-class PolygonExtractor:
-    @staticmethod
-    def extract_change_polygons(
-        ndvi_diff: np.ndarray,
-        ndvi_before: np.ndarray,
-        ndvi_after: np.ndarray,
-        center_lat: float,
-        center_lng: float,
-        threshold: float = -0.20,
-        pixel_size_meters: float = 10.0  # Sentinel-2 10m resolution
-    ) -> List[Dict[str, Any]]:
-        """
-        Converts significant change pixels into geographic polygons.
-        NDVI Difference -> Threshold -> Binary Mask -> Noise Removal -> Connected Components -> Polygonization.
-        """
-        # Step 1 & 2: Threshold & Binary Mask
-        binary_mask = (ndvi_diff <= threshold).astype(np.uint8) * 255
+from app.database.store import next_id
 
-        # Step 3: Noise Removal (Morphological opening & closing)
-        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
-        clean_mask = cv2.morphologyEx(binary_mask, cv2.MORPH_OPEN, kernel)
-        clean_mask = cv2.morphologyEx(clean_mask, cv2.MORPH_CLOSE, kernel)
+# Each synthetic tile represents roughly a 2km x 2km ground footprint at
+# GRID_SIZE resolution (matches app/satellite/sentinel_client.py).
+TILE_SPAN_M = 2000.0
 
-        # Step 4 & 5: Connected Components & Polygonization
-        contours, _ = cv2.findContours(clean_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-        grid_rows, grid_cols = ndvi_diff.shape
-        # Compute lat/lng delta per pixel based on center_lat/center_lng
-        meters_per_deg_lat = 111000.0
-        meters_per_deg_lng = 111000.0 * np.cos(np.radians(center_lat))
-        
-        lat_span = (grid_rows * pixel_size_meters) / meters_per_deg_lat
-        lng_span = (grid_cols * pixel_size_meters) / meters_per_deg_lng
+def extract_polygons(
+    mask: np.ndarray,
+    ndvi_before: np.ndarray,
+    ndvi_after: np.ndarray,
+    zone_center: dict[str, float],
+    zone_id: str,
+    min_pixels: int = 3,
+) -> list[dict[str, Any]]:
+    """Label contiguous True regions in `mask` and describe each as a
+    geo-referenced "polygon" (in the demo, an approximate centroid + area +
+    perimeter rather than a full vector boundary — sufficient to drive the
+    Change Detection table and map markers without an OpenCV/GEOS dependency)."""
+    labeled, n = ndimage.label(mask, structure=np.ones((3, 3)))
+    grid = mask.shape[0]
+    pixel_size_m = TILE_SPAN_M / grid
+    pixel_area_ha = (pixel_size_m**2) / 10_000
 
-        top_lat = center_lat + (lat_span / 2.0)
-        left_lng = center_lng - (lng_span / 2.0)
+    results: list[dict[str, Any]] = []
+    for label_id in range(1, n + 1):
+        region = labeled == label_id
+        count = int(region.sum())
+        if count < min_pixels:
+            continue
 
-        polygons_data = []
-        for idx, cnt in enumerate(contours):
-            if cv2.contourArea(cnt) < 5:  # Filter out tiny noise clusters
-                continue
+        ys, xs = np.where(region)
+        centroid_y, centroid_x = float(ys.mean()), float(xs.mean())
 
-            # Convert pixel coordinates to geographic lat/lng
-            geo_coords = []
-            cnt_squeezed = cnt.squeeze()
-            if cnt_squeezed.ndim == 1:
-                cnt_squeezed = np.array([cnt_squeezed])
+        # convert pixel centroid -> approximate lat/lng offset around zone center
+        dy_m = (centroid_y - grid / 2) * pixel_size_m
+        dx_m = (centroid_x - grid / 2) * pixel_size_m
+        d_lat = -(dy_m / 111_320)
+        d_lng = dx_m / (111_320 * np.cos(np.radians(zone_center["lat"])))
 
-            for pt in cnt_squeezed:
-                px_x, px_y = pt[0], pt[1]
-                lng = left_lng + (px_x / grid_cols) * lng_span
-                lat = top_lat - (px_y / grid_rows) * lat_span
-                geo_coords.append([round(float(lng), 6), round(float(lat), 6)])
+        # perimeter: count region-boundary edges (4-connectivity)
+        perimeter_px = _boundary_edge_count(region)
+        perimeter_m = perimeter_px * pixel_size_m
 
-            if len(geo_coords) < 3:
-                continue
-            
-            # Close polygon if needed
-            if geo_coords[0] != geo_coords[-1]:
-                geo_coords.append(geo_coords[0])
+        before_mean = float(ndvi_before[region].mean())
+        after_mean = float(ndvi_after[region].mean())
+        drop_pct = round((1 - after_mean / before_mean) * 100, 1) if before_mean > 0 else 0.0
+        area_ha = round(count * pixel_area_ha, 2)
 
-            # Calculate stats for this component mask
-            mask_component = np.zeros_like(clean_mask)
-            cv2.drawContours(mask_component, [cnt], -1, 255, -1)
-            comp_pixels = mask_component > 0
+        severity = (
+            "CRITICAL" if drop_pct >= 60 else
+            "SEVERE" if drop_pct >= 40 else
+            "MODERATE" if drop_pct >= 20 else
+            "MINOR"
+        )
 
-            mean_before = float(np.mean(ndvi_before[comp_pixels])) if np.any(comp_pixels) else 0.70
-            mean_after = float(np.mean(ndvi_after[comp_pixels])) if np.any(comp_pixels) else 0.30
-            decrease = float(mean_before - mean_after)
-            veg_loss_pct = float((decrease / max(0.01, mean_before)) * 100.0)
+        results.append({
+            "polygon_id": next_id("CHG_POLY"),
+            "zone_id": zone_id,
+            "centroid": {"lat": round(zone_center["lat"] + d_lat, 5), "lng": round(zone_center["lng"] + d_lng, 5)},
+            "area_ha": area_ha,
+            "perimeter_m": round(float(perimeter_m), 1),
+            "ndvi_before_mean": round(before_mean, 3),
+            "ndvi_after_mean": round(after_mean, 3),
+            "vegetation_drop_pct": drop_pct,
+            "severity": severity,
+            "pixel_count": count,
+        })
 
-            area_sq_m = float(np.sum(comp_pixels) * (pixel_size_meters ** 2))
-            area_ha = round(area_sq_m / 10000.0, 2)
-            if area_ha < 0.1:
-                area_ha = 0.45  # Min realistic threshold for UI display
+    results.sort(key=lambda r: r["area_ha"], reverse=True)
+    return results
 
-            centroid_lng = round(float(np.mean([pt[0] for pt in geo_coords])), 6)
-            centroid_lat = round(float(np.mean([pt[1] for pt in geo_coords])), 6)
 
-            severity = "Critical" if veg_loss_pct > 50 else ("High" if veg_loss_pct > 35 else "Moderate")
-
-            polygons_data.append({
-                "id": f"CHG_POLY_{idx+1:03d}",
-                "area_ha": area_ha,
-                "centroid_lat": centroid_lat,
-                "centroid_lng": centroid_lng,
-                "mean_ndvi_before": round(mean_before, 3),
-                "mean_ndvi_after": round(mean_after, 3),
-                "ndvi_decrease": round(decrease, 3),
-                "veg_loss_pct": round(veg_loss_pct, 1),
-                "severity": severity,
-                "polygon_geometry": geo_coords
-            })
-
-        return polygons_data
-
-polygon_extractor = PolygonExtractor()
+def _boundary_edge_count(region: np.ndarray) -> int:
+    padded = np.pad(region, 1, mode="constant", constant_values=False)
+    edges = 0
+    edges += np.logical_and(padded[1:-1, 1:-1], ~padded[:-2, 1:-1]).sum()  # up
+    edges += np.logical_and(padded[1:-1, 1:-1], ~padded[2:, 1:-1]).sum()   # down
+    edges += np.logical_and(padded[1:-1, 1:-1], ~padded[1:-1, :-2]).sum()  # left
+    edges += np.logical_and(padded[1:-1, 1:-1], ~padded[1:-1, 2:]).sum()   # right
+    return int(edges)

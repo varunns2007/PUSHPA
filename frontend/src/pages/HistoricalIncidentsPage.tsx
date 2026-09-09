@@ -1,69 +1,75 @@
-import React from 'react';
-import type { HistoricalIncident } from '../types';
-import { ShieldAlert } from 'lucide-react';
+import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import HUDFrame from "../components/HUD/HUDFrame";
+import BackendBadge from "../components/Backend/BackendBadge";
+import ForestCanvasMap from "../components/Map/ForestCanvasMap";
+import { listIncidents } from "../api/client";
+import { INCIDENTS_DEMO, type HistoricalIncident } from "../data/mockData";
 
-interface HistoricalIncidentsPageProps {
-  incidents: HistoricalIncident[];
-}
+export default function HistoricalIncidentsPage() {
+  const [incidents, setIncidents] = useState<HistoricalIncident[]>(INCIDENTS_DEMO);
 
-export const HistoricalIncidentsPage: React.FC<HistoricalIncidentsPageProps> = ({ incidents }) => {
+  useEffect(() => {
+    listIncidents().then((res) => {
+      if (res.ok) setIncidents(res.data.incidents);
+    });
+  }, []);
+
+  const bySpecies = incidents.reduce<Record<string, number>>((acc, i) => {
+    acc[i.species] = (acc[i.species] ?? 0) + 1;
+    return acc;
+  }, {});
+
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between gis-glass p-4 rounded-xl border border-slate-800">
-        <div className="flex items-center space-x-2">
-          <ShieldAlert className="h-5 w-5 text-amber-400" />
-          <div>
-            <h2 className="text-base font-black uppercase tracking-wider text-slate-100">
-              HISTORICAL INCIDENT DATABASE
-            </h2>
-            <p className="text-xs text-slate-400">
-              Geospatially indexed historical illegal logging & timber smuggling events
-            </p>
-          </div>
+    <div className="grid h-full grid-cols-1 gap-4 p-4 lg:grid-cols-[1fr_300px]">
+      <HUDFrame label="HISTORICAL INCIDENT HEATMAP" className="relative overflow-hidden">
+        <ForestCanvasMap interactive />
+        <div className="pointer-events-none absolute right-4 top-4">
+          <BackendBadge />
         </div>
-        <span className="rounded-full bg-amber-950 px-3 py-1 text-xs font-bold text-amber-400 border border-amber-800">
-          {incidents.length} HISTORICAL RECORDS
-        </span>
-      </div>
+        <div className="pointer-events-none absolute bottom-3 left-3 font-mono text-[10px] text-ash-500">
+          {incidents.length} RECORDED INCIDENTS · PREDICTS HIGH-VULNERABILITY CORRIDORS
+        </div>
+      </HUDFrame>
 
-      <div className="gis-glass rounded-xl p-4 border border-slate-800 space-y-3">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse">
-            <thead>
-              <tr className="border-b border-slate-800 bg-slate-900/80 text-slate-400 font-bold uppercase text-[10px]">
-                <th className="p-3">Incident ID</th>
-                <th className="p-3">Date</th>
-                <th className="p-3">Forest Area</th>
-                <th className="p-3">Coordinates</th>
-                <th className="p-3">Incident Type</th>
-                <th className="p-3">Est. Quantity</th>
-                <th className="p-3">Associated Vehicle</th>
-                <th className="p-3 text-right">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800/60 font-medium">
-              {incidents.slice(0, 50).map((inc) => (
-                <tr key={inc.id} className="hover:bg-slate-900/90 transition-colors">
-                  <td className="p-3 font-mono font-bold text-amber-400">{inc.id}</td>
-                  <td className="p-3 font-mono text-slate-300">{inc.incident_date}</td>
-                  <td className="p-3 font-bold text-slate-100">{inc.forest_name}</td>
-                  <td className="p-3 font-mono text-slate-400">
-                    {inc.latitude.toFixed(4)}°, {inc.longitude.toFixed(4)}°
-                  </td>
-                  <td className="p-3 text-slate-200">{inc.incident_type}</td>
-                  <td className="p-3 font-bold text-rose-400">{inc.estimated_quantity_m3} m³</td>
-                  <td className="p-3 font-mono text-slate-400">{inc.associated_vehicle_id || '—'}</td>
-                  <td className="p-3 text-right">
-                    <span className="rounded bg-red-950 px-2 py-0.5 text-[10px] font-bold text-red-400 border border-red-800">
-                      {inc.status}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      <div className="flex flex-col gap-4 overflow-y-auto">
+        <HUDFrame label="BY SPECIES" className="p-4">
+          <div className="space-y-2">
+            {Object.entries(bySpecies).map(([species, count], i) => (
+              <motion.div
+                key={species}
+                initial={{ opacity: 0, x: 10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: i * 0.08 }}
+                className="flex items-center justify-between font-mono text-[11px]"
+              >
+                <span className="text-ash-300">{species}</span>
+                <span className="text-gold-400">{count}</span>
+              </motion.div>
+            ))}
+          </div>
+        </HUDFrame>
+
+        <HUDFrame label="INCIDENT LOG" className="max-h-[420px] flex-1 overflow-y-auto p-2">
+          <div className="space-y-1.5 p-1.5">
+            {incidents.map((inc, i) => (
+              <motion.div
+                key={inc.id}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.04 }}
+                className="border border-line/60 bg-panel/40 px-3 py-2 font-mono text-[10px]"
+              >
+                <div className="flex justify-between text-ash-100">
+                  <span>{inc.id}</span>
+                  <span className="text-ash-500">{inc.date}</span>
+                </div>
+                <div className="mt-0.5 text-ash-500">{inc.species} · {inc.zone_id}</div>
+              </motion.div>
+            ))}
+          </div>
+        </HUDFrame>
       </div>
     </div>
   );
-};
+}
