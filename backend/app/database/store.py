@@ -152,6 +152,26 @@ VEHICLES: dict[str, dict[str, Any]] = {
 }
 
 # ---------------------------------------------------------------------------
+# Vehicle position history — a rolling log of where each vehicle has been
+# seen, timestamped. Populated by /vehicles/{id}/simulate-tick (and would be
+# populated by a real GPS/ALPR feed in production). This is what the Convoy
+# Correlation Engine (app/vehicles/convoy_correlation.py) reads to spot
+# multiple vehicles converging on the same freshly-cleared polygon, or one
+# vehicle returning to the same spot repeatedly — patterns a single-snapshot
+# view can never show.
+# ---------------------------------------------------------------------------
+VEHICLE_POSITION_LOG: dict[str, list[dict[str, Any]]] = {}
+POSITION_LOG_MAX_PER_VEHICLE = 200
+
+
+def log_vehicle_position(vehicle_id: str, lat: float, lng: float, timestamp: str | None = None) -> None:
+    entry = {"lat": lat, "lng": lng, "timestamp": timestamp or datetime.utcnow().isoformat()}
+    log = VEHICLE_POSITION_LOG.setdefault(vehicle_id, [])
+    log.insert(0, entry)
+    del log[POSITION_LOG_MAX_PER_VEHICLE:]
+
+
+# ---------------------------------------------------------------------------
 # Change-detection polygons (populated by /changes/detect)
 # ---------------------------------------------------------------------------
 CHANGE_POLYGONS: dict[str, dict[str, Any]] = {}
@@ -160,6 +180,21 @@ CHANGE_POLYGONS: dict[str, dict[str, Any]] = {}
 # Alerts (populated by the risk engine, consumed by the SSE stream)
 # ---------------------------------------------------------------------------
 ALERTS: list[dict[str, Any]] = []
+
+# ---------------------------------------------------------------------------
+# Daily/periodic satellite watch — history of automated before/after checks
+# run by app/scheduler/watch.py, keyed by zone_id. Each entry is one
+# scheduled comparison result (see watch.py for the shape). Kept in memory,
+# newest first, capped so a long-running server doesn't grow unbounded.
+# ---------------------------------------------------------------------------
+WATCH_HISTORY: dict[str, list[dict[str, Any]]] = {}
+WATCH_LAST_RUN_AT: str | None = None
+
+
+def record_watch_result(zone_id: str, result: dict[str, Any]) -> None:
+    history = WATCH_HISTORY.setdefault(zone_id, [])
+    history.insert(0, result)
+    del history[100:]
 
 
 def seed_default_change_polygon() -> None:
@@ -181,3 +216,27 @@ def seed_default_change_polygon() -> None:
 
 
 seed_default_change_polygon()
+
+
+def seed_demo_position_log() -> None:
+    """Pre-seed a couple of prior sightings near CHG_POLY_001 so the Convoy
+    Correlation Engine (app/vehicles/convoy_correlation.py) has something
+    interesting to find the moment the backend boots, without waiting for
+    several simulate-tick calls to build up history. Purely for demo
+    narrative — safe to remove once fed by a real GPS/ALPR feed.
+    """
+    if VEHICLE_POSITION_LOG:
+        return
+    now = datetime.utcnow()
+    # TN01AB1234 (unpermitted truck) — two prior passes near CHG_POLY_001,
+    # both at night, ~40 minutes apart: a repeat-visitor pattern.
+    log_vehicle_position("TN01AB1234", 11.4079, 76.6961, (now - timedelta(minutes=95)).isoformat())
+    log_vehicle_position("TN01AB1234", 11.4085, 76.6965, (now - timedelta(minutes=25)).isoformat())
+    # KL07BQ9012 (expired permit) also swings past the same polygon within
+    # the same window as TN01AB1234's last sighting — two different
+    # vehicles, same freshly-cleared spot, close together in time: exactly
+    # the "convoy" signature a lone vehicle-risk score would miss.
+    log_vehicle_position("KL07BQ9012", 11.4070, 76.6950, (now - timedelta(minutes=40)).isoformat())
+
+
+seed_demo_position_log()

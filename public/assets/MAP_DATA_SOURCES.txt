@@ -1,0 +1,7 @@
+PUSHPA map data sources
+
+Primary forest map: Esri World Imagery tile service.
+Satellite analysis backend: Microsoft Planetary Computer / Sentinel-2 when USE_LIVE_SATELLITE=1.
+Google vehicle map: Google Maps JavaScript API when VITE_GOOGLE_MAPS_API_KEY is configured.
+
+Always comply with the respective provider's current attribution, terms and usage limits in production deployments.

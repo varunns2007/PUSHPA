@@ -125,4 +125,6 @@ def compute_risk(
         "vehicle_analysis": vehicle_analysis,
         "permit": permit,
         "nearest_polygon": nearest_polygon,
+        "lat": vehicle["lat"],
+        "lng": vehicle["lng"],
     }
