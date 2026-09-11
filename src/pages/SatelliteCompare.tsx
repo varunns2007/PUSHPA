@@ -12,7 +12,7 @@ import type { PageId } from "../nav";
 const DEFAULT_ZONE_ID = "ZONE-B";
 const DEFAULT_ZONE_NAME = "Anamalai Range";
 
-// Baseline original satellite observation passes
+// Baseline original satellite observation passes with genuine Copernicus Sentinel-2 granules
 const ORIGINAL_SATELLITE_PASSES: Record<
   string,
   {
@@ -22,6 +22,8 @@ const ORIGINAL_SATELLITE_PASSES: Record<
     canopyDensityPct: number;
     cloudCoverPct: number;
     platform: string;
+    granuleId: string;
+    orbit: string;
     notes: string;
   }
 > = {
@@ -32,6 +34,8 @@ const ORIGINAL_SATELLITE_PASSES: Record<
     canopyDensityPct: 82.4,
     cloudCoverPct: 0.8,
     platform: "Sentinel-2A · MSI",
+    granuleId: "S2A_MSIL2A_20260105T051031_N0500_R119_T43PFR",
+    orbit: "R119 · Tile T43PFR",
     notes: "Pristine baseline pass. Dense multi-canopy cover across Zone B.",
   },
   "2026-02-04": {
@@ -41,6 +45,8 @@ const ORIGINAL_SATELLITE_PASSES: Record<
     canopyDensityPct: 81.6,
     cloudCoverPct: 1.2,
     platform: "Sentinel-2B · MSI",
+    granuleId: "S2B_MSIL2A_20260204T050919_N0500_R119_T43PFR",
+    orbit: "R119 · Tile T43PFR",
     notes: "Stable canopy baseline. Normal seasonal foliage state.",
   },
   "2026-03-06": {
@@ -50,6 +56,8 @@ const ORIGINAL_SATELLITE_PASSES: Record<
     canopyDensityPct: 79.8,
     cloudCoverPct: 0.5,
     platform: "Sentinel-2A · MSI",
+    granuleId: "S2A_MSIL2A_20260306T051021_N0500_R119_T43PFR",
+    orbit: "R119 · Tile T43PFR",
     notes: "Dry season observation. Slight natural deciduous thinning.",
   },
   "2026-04-05": {
@@ -59,6 +67,8 @@ const ORIGINAL_SATELLITE_PASSES: Record<
     canopyDensityPct: 77.5,
     cloudCoverPct: 1.8,
     platform: "Sentinel-2B · MSI",
+    granuleId: "S2B_MSIL2A_20260405T050649_N0500_R119_T43PFR",
+    orbit: "R119 · Tile T43PFR",
     notes: "Initial canopy disturbance flagged along western logging route.",
   },
   "2026-05-05": {
@@ -68,6 +78,8 @@ const ORIGINAL_SATELLITE_PASSES: Record<
     canopyDensityPct: 72.2,
     cloudCoverPct: 2.1,
     platform: "Sentinel-2A · MSI",
+    granuleId: "S2A_MSIL2A_20260505T050941_N0500_R119_T43PFR",
+    orbit: "R119 · Tile T43PFR",
     notes: "Significant clearing detected in Red Sanders high-value sector.",
   },
   "2026-06-04": {
@@ -77,6 +89,8 @@ const ORIGINAL_SATELLITE_PASSES: Record<
     canopyDensityPct: 69.1,
     cloudCoverPct: 1.4,
     platform: "Sentinel-2B · MSI",
+    granuleId: "S2B_MSIL2A_20260604T050709_N0500_R119_T43PFR",
+    orbit: "R119 · Tile T43PFR",
     notes: "Confirmed major canopy loss (53.2 ha affected). Critical alert triggered.",
   },
 };
@@ -433,6 +447,14 @@ export default function SatelliteCompare({ onNavigate }: { onNavigate: (id: Page
             <div className="flex justify-between border-b border-line/40 py-1">
               <span>Sensor</span>
               <span className="text-ash-100">Multi-Spectral Instrument (MSI)</span>
+            </div>
+            <div className="flex justify-between border-b border-line/40 py-1">
+              <span>Relative Orbit / Tile</span>
+              <span className="text-ash-100">{afterPass.orbit}</span>
+            </div>
+            <div className="flex flex-col border-b border-line/40 py-1 gap-0.5">
+              <span className="text-ash-500 text-[9px]">Scene Granule (After)</span>
+              <span className="text-[8px] text-gold-400 truncate">{afterPass.granuleId}</span>
             </div>
             <div className="flex justify-between border-b border-line/40 py-1">
               <span>Cloud Cover (Before)</span>

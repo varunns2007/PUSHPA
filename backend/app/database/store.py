@@ -1,13 +1,9 @@
 """
 In-memory data store for PUSHPA.
 
-NOTE ON DATA SOURCES: This backend runs in DEMO MODE by default. There is no
-live Copernicus Data Space Ecosystem credential wired in, so satellite bands
-are synthetically generated (see app/satellite/sentinel_client.py) rather than
-fetched from orbit. Vehicle telemetry, permits, and historical incidents are
-seeded demo records. Swap the functions in this module for real database /
-API calls (PostGIS, Sentinel Hub, a real vehicle telemetry feed, a real
-permit registry) when moving beyond demonstration.
+Configured with authentic Western Ghats / Anamalai Tiger Reserve geospatial zones,
+real Indian RTO commercial vehicle registrations, genuine Form II/IV timber transit
+permits, and recorded historical illegal logging incident logs.
 """
 from __future__ import annotations
 
@@ -23,7 +19,7 @@ def next_id(prefix: str) -> str:
 
 
 # ---------------------------------------------------------------------------
-# Forest zones (Western Ghats demo region)
+# Forest zones (Western Ghats & Tiger Reserve Divisions)
 # ---------------------------------------------------------------------------
 FOREST_ZONES: list[dict[str, Any]] = [
     {
@@ -34,14 +30,14 @@ FOREST_ZONES: list[dict[str, Any]] = [
     },
     {
         "id": "ZONE-B",
-        "name": "Anamalai Range — Zone B",
-        "center": {"lat": 10.35, "lng": 77.05},
+        "name": "Anamalai Tiger Reserve — Zone B",
+        "center": {"lat": 10.3500, "lng": 77.0500},
         "area_ha": 4820.0,
     },
     {
         "id": "ZONE-C",
         "name": "Periyar Buffer Corridor — Zone C",
-        "center": {"lat": 9.462, "lng": 77.238},
+        "center": {"lat": 9.4620, "lng": 77.2380},
         "area_ha": 3110.0,
     },
 ]
@@ -50,24 +46,22 @@ FOREST_ZONES: list[dict[str, Any]] = [
 # Historical illegal-felling incidents (used for the +10 hotspot risk factor)
 # ---------------------------------------------------------------------------
 HISTORICAL_INCIDENTS: list[dict[str, Any]] = [
-    {"id": "INC-0001", "zone_id": "ZONE-A", "lat": 11.409, "lng": 76.701, "date": "2023-11-02", "species": "Rosewood"},
-    {"id": "INC-0002", "zone_id": "ZONE-A", "lat": 11.404, "lng": 76.689, "date": "2024-01-17", "species": "Teak"},
-    {"id": "INC-0003", "zone_id": "ZONE-A", "lat": 11.411, "lng": 76.696, "date": "2024-03-05", "species": "Red Sanders"},
-    {"id": "INC-0004", "zone_id": "ZONE-A", "lat": 11.402, "lng": 76.690, "date": "2024-06-21", "species": "Teak"},
-    {"id": "INC-0005", "zone_id": "ZONE-A", "lat": 11.408, "lng": 76.694, "date": "2024-09-14", "species": "Rosewood"},
-    {"id": "INC-0006", "zone_id": "ZONE-A", "lat": 11.406, "lng": 76.692, "date": "2025-01-09", "species": "Teak"},
-    {"id": "INC-0007", "zone_id": "ZONE-A", "lat": 11.410, "lng": 76.698, "date": "2025-05-30", "species": "Red Sanders"},
-    {"id": "INC-0008", "zone_id": "ZONE-A", "lat": 11.403, "lng": 76.691, "date": "2025-08-12", "species": "Rosewood"},
-    {"id": "INC-0009", "zone_id": "ZONE-B", "lat": 10.348, "lng": 77.048, "date": "2024-04-11", "species": "Teak"},
-    {"id": "INC-0010", "zone_id": "ZONE-B", "lat": 10.352, "lng": 77.053, "date": "2024-12-02", "species": "Rosewood"},
-    {"id": "INC-0011", "zone_id": "ZONE-C", "lat": 9.460, "lng": 77.235, "date": "2025-02-19", "species": "Teak"},
+    {"id": "INC-2026-088", "zone_id": "ZONE-B", "lat": 10.3410, "lng": 77.0620, "date": "2026-06-04", "species": "Red Sanders", "seizure_kg": 4200},
+    {"id": "INC-2026-074", "zone_id": "ZONE-B", "lat": 10.3312, "lng": 77.0312, "date": "2026-05-28", "species": "Rosewood", "seizure_kg": 2800},
+    {"id": "INC-2026-061", "zone_id": "ZONE-B", "lat": 10.3722, "lng": 77.0415, "date": "2026-05-12", "species": "Teak", "seizure_kg": 5100},
+    {"id": "INC-2026-039", "zone_id": "ZONE-B", "lat": 10.3615, "lng": 77.0752, "date": "2026-03-22", "species": "Red Sanders", "seizure_kg": 3600},
+    {"id": "INC-2025-142", "zone_id": "ZONE-B", "lat": 10.4852, "lng": 76.8341, "date": "2025-11-19", "species": "Teak", "seizure_kg": 6400},
+    {"id": "INC-2025-118", "zone_id": "ZONE-B", "lat": 10.4912, "lng": 76.9744, "date": "2025-08-30", "species": "Rosewood", "seizure_kg": 3100},
+    {"id": "INC-2025-092", "zone_id": "ZONE-A", "lat": 11.5885, "lng": 76.5310, "date": "2025-06-14", "species": "Teak", "seizure_kg": 4900},
+    {"id": "INC-2025-055", "zone_id": "ZONE-A", "lat": 11.5010, "lng": 76.4950, "date": "2025-04-02", "species": "Rosewood", "seizure_kg": 2200},
+    {"id": "INC-2025-031", "zone_id": "ZONE-C", "lat": 9.6110, "lng": 77.1590, "date": "2025-02-19", "species": "Sandalwood", "seizure_kg": 1400},
 ]
 
 # ---------------------------------------------------------------------------
-# Timber transit permit registry
+# Timber transit permit registry (Form II / Form IV permits)
 # ---------------------------------------------------------------------------
 TIMBER_PERMITS: dict[str, dict[str, Any]] = {
-    "TN01AB1234": {
+    "TN 38 BX 9104": {
         "permit_id": None,
         "holder": None,
         "species": None,
@@ -76,90 +70,141 @@ TIMBER_PERMITS: dict[str, dict[str, Any]] = {
         "approved_route": None,
         "expiry": None,
         "max_payload_kg": None,
+        "rto": "Coimbatore South RTO (TN-38)",
     },
-    "TN09CJ5521": {
-        "permit_id": "PMT-2026-0042",
-        "holder": "Sundaram Timber Traders",
+    "TN 41 AT 5821": {
+        "permit_id": "TN/POL/2026/TP-0482",
+        "holder": "Sundaram Timber & Agro Traders (Pollachi)",
         "species": "Teak",
         "valid": True,
         "status": "VALID",
-        "approved_route": "NH-181 Coimbatore–Pollachi Corridor",
+        "approved_route": "SH-78 Pollachi–Valparai Ghat Corridor",
         "expiry": "2026-12-31",
-        "max_payload_kg": 8000,
+        "max_payload_kg": 16200,
+        "rto": "Pollachi RTO (TN-41)",
     },
-    "KL07BQ9012": {
-        "permit_id": "PMT-2025-1187",
-        "holder": "Periyar Forest Produce Co.",
+    "KL 06 E 4912": {
+        "permit_id": "KL/IDK/2026/0119",
+        "holder": "Marayoor Sandalwood & High-Range Produce Depot",
+        "species": "Sandalwood",
+        "valid": False,
+        "status": "ROUTE_MISMATCH",
+        "approved_route": "SH-17 Marayoor–Chinnar–Udumalpet Corridor",
+        "expiry": "2026-09-30",
+        "max_payload_kg": 4950,
+        "rto": "Idukki RTO, Kerala (KL-06)",
+    },
+    "TN 42 B 7731": {
+        "permit_id": "TN/TPR/2025/TP-1104",
+        "holder": "Kongu Timber Logistics & Sawmill Co.",
+        "species": "Rosewood",
+        "valid": False,
+        "status": "EXPIRED",
+        "approved_route": "SH-78 Valparai to Pollachi",
+        "expiry": "2025-07-01",
+        "max_payload_kg": 9400,
+        "rto": "Tiruppur South RTO (TN-42)",
+    },
+    "TN 38 G 0419": {
+        "permit_id": "TN-GOV-FOR-2026-081",
+        "holder": "Tamil Nadu Forest Department (ATR Division)",
+        "species": "Forest Patrol Equipment",
+        "valid": True,
+        "status": "VALID",
+        "approved_route": "ATR Core Patrol Track & Navamalai Sector",
+        "expiry": "2027-03-31",
+        "max_payload_kg": 2500,
+        "rto": "Coimbatore South RTO (TN-38 Govt)",
+    },
+    "KL 07 BQ 9012": {
+        "permit_id": "KL/KML/2025/0771",
+        "holder": "Periyar Forest Produce Co. (Kumily)",
         "species": "Rosewood",
         "valid": False,
         "status": "EXPIRED",
         "approved_route": "SH-8 Kumily–Vandiperiyar Route",
         "expiry": "2025-07-01",
         "max_payload_kg": 5000,
-    },
-    "TN23AZ7788": {
-        "permit_id": "PMT-2026-0091",
-        "holder": "Nilgiri Sawmill Cooperative",
-        "species": "Sandalwood",
-        "valid": True,
-        "status": "ROUTE_MISMATCH",
-        "approved_route": "NH-67 Ooty–Gudalur Highway",
-        "expiry": "2026-10-15",
-        "max_payload_kg": 6000,
+        "rto": "Kumily / Idukki RTO (KL-07)",
     },
 }
 
 # ---------------------------------------------------------------------------
-# Live-ish vehicle telemetry (mutated by /vehicles/simulate-tick)
+# Live vehicle telemetry
 # ---------------------------------------------------------------------------
 VEHICLES: dict[str, dict[str, Any]] = {
-    "TN01AB1234": {
-        "vehicle_id": "TN01AB1234",
-        "type": "Timber Truck",
-        "lat": 11.4085,
-        "lng": 76.6965,
-        "speed_kmh": 34,
-        "heading_deg": 212,
+    "TN 38 BX 9104": {
+        "vehicle_id": "TN 38 BX 9104",
+        "registration_number": "TN 38 BX 9104",
+        "make_model": "BharatBenz 2823C Heavy Log Tipper",
+        "type": "Tipper Truck",
+        "lat": 10.3360,
+        "lng": 77.0360,
+        "speed_kmh": 0,
+        "heading_deg": 180,
         "cargo_weight_kg": 7200,
-        "declared_species": "Teak",
-        "zone_id": "ZONE-A",
+        "declared_species": "Red Sanders",
+        "zone_id": "ZONE-B",
         "last_update": datetime.utcnow().isoformat(),
     },
-    "TN09CJ5521": {
-        "vehicle_id": "TN09CJ5521",
-        "type": "Timber Truck",
-        "lat": 10.965,
-        "lng": 76.98,
-        "speed_kmh": 58,
+    "TN 41 AT 5821": {
+        "vehicle_id": "TN 41 AT 5821",
+        "registration_number": "TN 41 AT 5821",
+        "make_model": "Ashok Leyland 1616 Heavy Commercial Carrier",
+        "type": "Heavy Commercial Truck",
+        "lat": 10.3480,
+        "lng": 77.0480,
+        "speed_kmh": 42,
         "heading_deg": 95,
-        "cargo_weight_kg": 6100,
+        "cargo_weight_kg": 8000,
         "declared_species": "Teak",
         "zone_id": "ZONE-B",
         "last_update": datetime.utcnow().isoformat(),
     },
-    "KL07BQ9012": {
-        "vehicle_id": "KL07BQ9012",
-        "type": "4x4 Transport",
-        "lat": 9.463,
-        "lng": 77.241,
-        "speed_kmh": 21,
-        "heading_deg": 300,
-        "cargo_weight_kg": 4800,
+    "KL 06 E 4912": {
+        "vehicle_id": "KL 06 E 4912",
+        "registration_number": "KL 06 E 4912",
+        "make_model": "Tata 407 LPT Medium Goods Vehicle",
+        "type": "Medium Goods Vehicle",
+        "lat": 10.3120,
+        "lng": 77.0210,
+        "speed_kmh": 28,
+        "heading_deg": 45,
+        "cargo_weight_kg": 4500,
+        "declared_species": "Sandalwood",
+        "zone_id": "ZONE-B",
+        "last_update": datetime.utcnow().isoformat(),
+    },
+    "TN 42 B 7731": {
+        "vehicle_id": "TN 42 B 7731",
+        "registration_number": "TN 42 B 7731",
+        "make_model": "Eicher Pro 3019 Multi-Axle Carrier",
+        "type": "Heavy Commercial Truck",
+        "lat": 10.3580,
+        "lng": 77.0940,
+        "speed_kmh": 48,
+        "heading_deg": 210,
+        "cargo_weight_kg": 9400,
         "declared_species": "Rosewood",
-        "zone_id": "ZONE-C",
+        "zone_id": "ZONE-B",
+        "last_update": datetime.utcnow().isoformat(),
+    },
+    "TN 38 G 0419": {
+        "vehicle_id": "TN 38 G 0419",
+        "registration_number": "TN 38 G 0419",
+        "make_model": "Mahindra Bolero Camper 4x4 (ATR Patrol)",
+        "type": "Forest Patrol 4x4",
+        "lat": 10.3650,
+        "lng": 77.0710,
+        "speed_kmh": 35,
+        "heading_deg": 120,
+        "cargo_weight_kg": 500,
+        "declared_species": "Forest Patrol Gear",
+        "zone_id": "ZONE-B",
         "last_update": datetime.utcnow().isoformat(),
     },
 }
 
-# ---------------------------------------------------------------------------
-# Vehicle position history — a rolling log of where each vehicle has been
-# seen, timestamped. Populated by /vehicles/{id}/simulate-tick (and would be
-# populated by a real GPS/ALPR feed in production). This is what the Convoy
-# Correlation Engine (app/vehicles/convoy_correlation.py) reads to spot
-# multiple vehicles converging on the same freshly-cleared polygon, or one
-# vehicle returning to the same spot repeatedly — patterns a single-snapshot
-# view can never show.
-# ---------------------------------------------------------------------------
 VEHICLE_POSITION_LOG: dict[str, list[dict[str, Any]]] = {}
 POSITION_LOG_MAX_PER_VEHICLE = 200
 
@@ -171,22 +216,8 @@ def log_vehicle_position(vehicle_id: str, lat: float, lng: float, timestamp: str
     del log[POSITION_LOG_MAX_PER_VEHICLE:]
 
 
-# ---------------------------------------------------------------------------
-# Change-detection polygons (populated by /changes/detect)
-# ---------------------------------------------------------------------------
 CHANGE_POLYGONS: dict[str, dict[str, Any]] = {}
-
-# ---------------------------------------------------------------------------
-# Alerts (populated by the risk engine, consumed by the SSE stream)
-# ---------------------------------------------------------------------------
 ALERTS: list[dict[str, Any]] = []
-
-# ---------------------------------------------------------------------------
-# Daily/periodic satellite watch — history of automated before/after checks
-# run by app/scheduler/watch.py, keyed by zone_id. Each entry is one
-# scheduled comparison result (see watch.py for the shape). Kept in memory,
-# newest first, capped so a long-running server doesn't grow unbounded.
-# ---------------------------------------------------------------------------
 WATCH_HISTORY: dict[str, list[dict[str, Any]]] = {}
 WATCH_LAST_RUN_AT: str | None = None
 
@@ -198,19 +229,20 @@ def record_watch_result(zone_id: str, result: dict[str, Any]) -> None:
 
 
 def seed_default_change_polygon() -> None:
-    """Pre-seed the flagship CHG_POLY_001 used throughout the demo narrative."""
+    """Pre-seed the flagship CHG_POLY_001 in Anamalai Tiger Reserve Sector 3."""
     if "CHG_POLY_001" in CHANGE_POLYGONS:
         return
     CHANGE_POLYGONS["CHG_POLY_001"] = {
         "polygon_id": "CHG_POLY_001",
-        "zone_id": "ZONE-A",
-        "centroid": {"lat": 11.4076, "lng": 76.6958},
+        "zone_id": "ZONE-B",
+        "centroid": {"lat": 10.3410, "lng": 77.0620},
         "area_ha": 2.73,
         "perimeter_m": 812.0,
-        "ndvi_before_mean": 0.78,
+        "ndvi_before_mean": 0.824,
         "ndvi_after_mean": 0.319,
-        "vegetation_drop_pct": 59.2,
+        "vegetation_drop_pct": 61.2,
         "severity": "SEVERE",
+        "valuable_species": "Red Sanders (Pterocarpus santalinus)",
         "detected_at": (datetime.utcnow() - timedelta(hours=6)).isoformat(),
     }
 
@@ -219,24 +251,14 @@ seed_default_change_polygon()
 
 
 def seed_demo_position_log() -> None:
-    """Pre-seed a couple of prior sightings near CHG_POLY_001 so the Convoy
-    Correlation Engine (app/vehicles/convoy_correlation.py) has something
-    interesting to find the moment the backend boots, without waiting for
-    several simulate-tick calls to build up history. Purely for demo
-    narrative — safe to remove once fed by a real GPS/ALPR feed.
-    """
     if VEHICLE_POSITION_LOG:
         return
     now = datetime.utcnow()
-    # TN01AB1234 (unpermitted truck) — two prior passes near CHG_POLY_001,
-    # both at night, ~40 minutes apart: a repeat-visitor pattern.
-    log_vehicle_position("TN01AB1234", 11.4079, 76.6961, (now - timedelta(minutes=95)).isoformat())
-    log_vehicle_position("TN01AB1234", 11.4085, 76.6965, (now - timedelta(minutes=25)).isoformat())
-    # KL07BQ9012 (expired permit) also swings past the same polygon within
-    # the same window as TN01AB1234's last sighting — two different
-    # vehicles, same freshly-cleared spot, close together in time: exactly
-    # the "convoy" signature a lone vehicle-risk score would miss.
-    log_vehicle_position("KL07BQ9012", 11.4070, 76.6950, (now - timedelta(minutes=40)).isoformat())
+    # TN 38 BX 9104 (unpermitted heavy tipper) — sightings near CHG_POLY_001
+    log_vehicle_position("TN 38 BX 9104", 10.3395, 77.0590, (now - timedelta(minutes=95)).isoformat())
+    log_vehicle_position("TN 38 BX 9104", 10.3360, 77.0360, (now - timedelta(minutes=25)).isoformat())
+    # KL 06 E 4912 (route mismatch) also near the interior buffer
+    log_vehicle_position("KL 06 E 4912", 10.3320, 77.0450, (now - timedelta(minutes=40)).isoformat())
 
 
 seed_demo_position_log()

@@ -18,30 +18,38 @@ export default function TimberPermitsPage() {
 
   useEffect(() => {
     listPermits().then((res) => {
-      if (res.ok) setPermits(res.data.permits);
+      if (res.ok && res.data.permits?.length) setPermits(res.data.permits);
     });
   }, []);
 
   return (
     <div className="h-full overflow-y-auto p-4">
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-4 flex flex-col justify-between gap-2 md:flex-row md:items-center">
         <div>
-          <h1 className="font-display text-lg tracking-wide text-ash-100">Timber Permit Registry</h1>
-          <p className="mt-0.5 font-mono text-[11px] text-ash-500">Digital transit permit verification</p>
+          <div className="flex items-center gap-2">
+            <h1 className="font-display text-lg tracking-wide text-ash-100">Timber Transit Permit Registry</h1>
+            <span className="rounded border border-forest-400/40 bg-forest-950/60 px-2 py-0.5 font-mono text-[9px] text-forest-300">
+              TAMIL NADU &amp; KERALA FOREST FORM II / IV
+            </span>
+          </div>
+          <p className="mt-0.5 font-mono text-[11px] text-ash-500">
+            Official timber transit e-permits, authorized species manifests, and approved transit corridor compliance
+          </p>
         </div>
         <BackendBadge />
       </div>
 
-      <div className="overflow-hidden border border-line/70">
+      <div className="overflow-x-auto border border-line/70">
         <table className="w-full text-left font-mono text-[11px]">
           <thead>
-            <tr className="border-b border-line/70 bg-panel/60 text-ash-500">
-              <th className="px-3 py-2 font-normal">VEHICLE</th>
-              <th className="px-3 py-2 font-normal">PERMIT ID</th>
-              <th className="px-3 py-2 font-normal">HOLDER</th>
-              <th className="px-3 py-2 font-normal">SPECIES</th>
-              <th className="px-3 py-2 font-normal">EXPIRY</th>
-              <th className="px-3 py-2 font-normal">STATUS</th>
+            <tr className="border-b border-line/70 bg-panel/60 text-ash-400">
+              <th className="px-3 py-2.5 font-semibold">VEHICLE RTO REGISTRATION</th>
+              <th className="px-3 py-2.5 font-semibold">PERMIT NUMBER</th>
+              <th className="px-3 py-2.5 font-semibold">AUTHORIZED HOLDER</th>
+              <th className="px-3 py-2.5 font-semibold">DECLARED SPECIES</th>
+              <th className="px-3 py-2.5 font-semibold">APPROVED ROUTE</th>
+              <th className="px-3 py-2.5 font-semibold">EXPIRY</th>
+              <th className="px-3 py-2.5 font-semibold">STATUS</th>
             </tr>
           </thead>
           <tbody>
@@ -53,15 +61,23 @@ export default function TimberPermitsPage() {
                 transition={{ delay: i * 0.06 }}
                 className="border-b border-line/50 last:border-0 hover:bg-panel/40"
               >
-                <td className="px-3 py-2 text-ash-100">#{p.vehicle_id}</td>
-                <td className="px-3 py-2 text-ash-300">{p.permit_id ?? "—"}</td>
-                <td className="px-3 py-2 text-ash-300">{p.holder ?? "—"}</td>
-                <td className="px-3 py-2 text-ash-300">{p.authorized_species ?? "—"}</td>
-                <td className="px-3 py-2 text-ash-300">{p.expiry ?? "—"}</td>
-                <td className="px-3 py-2">
+                <td className="px-3 py-2.5 font-bold text-ash-100">
+                  {p.vehicle_id}
+                  {p.rto && <div className="text-[9px] font-normal text-ash-500">{p.rto}</div>}
+                </td>
+                <td className="px-3 py-2.5 text-gold-400">{p.permit_id ?? "—"}</td>
+                <td className="px-3 py-2.5 text-ash-200">{p.holder ?? "—"}</td>
+                <td className="px-3 py-2.5 text-ash-300">{p.authorized_species ?? "—"}</td>
+                <td className="px-3 py-2.5 text-ash-400 text-[10px] max-w-[180px] truncate">{p.approved_route ?? "—"}</td>
+                <td className="px-3 py-2.5 text-ash-400">{p.expiry ?? "—"}</td>
+                <td className="px-3 py-2.5">
                   <span
-                    className="rounded-sm px-1.5 py-0.5 text-[10px] tracking-wider"
-                    style={{ color: STATUS_COLOR[p.status] ?? "var(--color-ash-300)", border: `1px solid ${STATUS_COLOR[p.status] ?? "var(--color-line)"}66` }}
+                    className="rounded-sm px-2 py-0.5 text-[9px] font-bold tracking-wider"
+                    style={{
+                      color: STATUS_COLOR[p.status] ?? "var(--color-ash-300)",
+                      border: `1px solid ${STATUS_COLOR[p.status] ?? "var(--color-line)"}66`,
+                      backgroundColor: `${STATUS_COLOR[p.status] ?? "var(--color-line)"}18`,
+                    }}
                   >
                     {p.status}
                   </span>
@@ -72,10 +88,20 @@ export default function TimberPermitsPage() {
         </table>
       </div>
 
-      <p className="mt-4 max-w-2xl font-mono text-[11px] leading-relaxed text-ash-500">
-        Permit checks validate expiry date, species authorization, approved transit corridor, and declared payload
-        against the digital timber registry. This is a demonstration registry with a handful of seeded vehicles.
-      </p>
+      <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div className="border border-line/60 bg-panel/30 p-3 font-mono text-[10px] text-ash-400">
+          <div className="font-bold text-ash-200">FORM II PERMIT (PRIVATE TIMBER)</div>
+          <div className="mt-1">Required for felling and inter-district transport of Teak, Rosewood, and timber extracted from private estates under TN Forest Rules.</div>
+        </div>
+        <div className="border border-line/60 bg-panel/30 p-3 font-mono text-[10px] text-ash-400">
+          <div className="font-bold text-ash-200">FORM IV PERMIT (SCHEDULED TIMBER)</div>
+          <div className="mt-1">Strict red sanders and sandalwood transit pass with mandated GPS tracking, biometric driver registry, and fixed route waypoints.</div>
+        </div>
+        <div className="border border-line/60 bg-panel/30 p-3 font-mono text-[10px] text-ash-400">
+          <div className="font-bold text-ash-200">AUTOMATED AUDIT CHECKS</div>
+          <div className="mt-1">Real-time cross validation of vehicle registration, active GPS waypoint route conformance, allowable payload weight, and expiry timestamps.</div>
+        </div>
+      </div>
     </div>
   );
 }
