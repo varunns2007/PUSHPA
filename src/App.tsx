@@ -10,6 +10,7 @@ import type { PageId } from "./nav";
 import Overview from "./pages/Overview";
 import ForestExplorer from "./pages/ForestExplorer";
 import SatelliteCompare from "./pages/SatelliteCompare";
+import RangeDeforestationDetector from "./pages/RangeDeforestationDetector";
 import ThreatIntel from "./pages/ThreatIntel";
 import ReportsAnalytics from "./pages/ReportsAnalytics";
 import Settings from "./pages/Settings";
@@ -31,6 +32,7 @@ export default function App() {
               <AnimatePresence mode="wait">
                 <PageTransition key={page}>
                   {page === "overview" && <Overview onNavigate={setPage} />}
+                  {page === "range-detector" && <RangeDeforestationDetector onNavigate={setPage} />}
                   {page === "forest-explorer" && <ForestExplorer />}
                   {page === "satellite-compare" && <SatelliteCompare onNavigate={setPage} />}
                   {page === "threat-intel" && <ThreatIntel />}

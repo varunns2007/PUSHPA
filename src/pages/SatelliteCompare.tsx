@@ -220,7 +220,10 @@ const DEFORESTATION_SECTORS: DeforestationSector[] = [
   },
 ];
 
+import RangeDeforestationDetector from "./RangeDeforestationDetector";
+
 export default function SatelliteCompare({ onNavigate }: { onNavigate: (id: PageId) => void }) {
+  const [activeTab, setActiveTab] = useState<"slider" | "range-scanner">("slider");
   const { comparison, setComparison } = useComparison();
   const [beforeDate, setBeforeDate] = useState("2026-01-05");
   const [afterDate, setAfterDate] = useState(comparison.afterDate || "2026-06-04");
@@ -228,6 +231,34 @@ export default function SatelliteCompare({ onNavigate }: { onNavigate: (id: Page
   const [justUpdated, setJustUpdated] = useState(false);
   const [compareMode, setCompareMode] = useState<"true-color" | "ndvi" | "loss-mask">("true-color");
   const [zoom, setZoom] = useState(12);
+
+  if (activeTab === "range-scanner") {
+    return (
+      <div className="flex h-full flex-col">
+        <div className="flex items-center gap-2 border-b border-line/70 bg-bark/90 px-4 pt-3 pb-2">
+          <button
+            type="button"
+            data-cursor-hover
+            onClick={() => setActiveTab("slider")}
+            className="border border-line/60 bg-panel/30 px-3 py-1.5 font-mono text-[11px] text-ash-400 hover:text-white"
+          >
+            🛰️ Split-Screen Swipe Comparer
+          </button>
+          <button
+            type="button"
+            data-cursor-hover
+            onClick={() => setActiveTab("range-scanner")}
+            className="border border-gold-500 bg-gold-500/20 px-3 py-1.5 font-mono text-[11px] font-bold text-gold-300 shadow-[0_0_10px_rgba(234,179,8,0.3)]"
+          >
+            ⌖ Select Any Forest Range on Map &amp; Detect Deforestation
+          </button>
+        </div>
+        <div className="min-h-0 flex-1">
+          <RangeDeforestationDetector onNavigate={onNavigate} />
+        </div>
+      </div>
+    );
+  }
 
   // Original satellite pass metadata lookup (fallback with calculated values if custom date)
   const getPassData = (d: string) => {
@@ -322,6 +353,26 @@ export default function SatelliteCompare({ onNavigate }: { onNavigate: (id: Page
 
   return (
     <div className="h-full overflow-y-auto p-4">
+      {/* Top Feature Sub-Tab Switcher */}
+      <div className="mb-4 flex items-center gap-2 border-b border-line/70 pb-3">
+        <button
+          type="button"
+          data-cursor-hover
+          onClick={() => setActiveTab("slider")}
+          className="rounded border border-gold-500 bg-gold-500/20 px-3 py-1.5 font-mono text-[11px] font-bold text-gold-300 shadow-[0_0_10px_rgba(234,179,8,0.3)]"
+        >
+          🛰️ Split-Screen Swipe Comparer
+        </button>
+        <button
+          type="button"
+          data-cursor-hover
+          onClick={() => setActiveTab("range-scanner")}
+          className="rounded border border-line/60 bg-panel/30 px-3 py-1.5 font-mono text-[11px] text-ash-400 hover:text-white transition-colors"
+        >
+          ⌖ Select Any Forest Range on Map &amp; Detect Deforestation
+        </button>
+      </div>
+
       {/* Header */}
       <div className="mb-4 flex flex-col justify-between gap-2 md:flex-row md:items-center">
         <div>

@@ -11,7 +11,17 @@ export default function Overview({ onNavigate }: { onNavigate: (id: PageId) => v
     <div className="grid h-full grid-cols-1 gap-4 p-4 lg:grid-cols-[1fr_320px]">
       <div className="flex min-h-0 flex-col gap-4">
         <div className="flex items-center justify-between">
-          <div className="font-mono text-[11px] tracking-wider text-ash-500">COMMAND CENTER</div>
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-[11px] tracking-wider text-ash-500">COMMAND CENTER</span>
+            <button
+              type="button"
+              data-cursor-hover
+              onClick={() => onNavigate("range-detector")}
+              className="hidden sm:inline-flex items-center gap-1.5 rounded border border-gold-500/50 bg-gold-500/10 px-2.5 py-1 font-mono text-[10px] font-bold text-gold-300 hover:bg-gold-500/25 transition-colors shadow-[0_0_8px_rgba(234,179,8,0.2)]"
+            >
+              <span>⌖</span> SCAN ANY FOREST RANGE FOR DEFORESTATION ➔
+            </button>
+          </div>
           <DemoScenarioButton />
         </div>
         <HUDFrame label="FOREST REGION · MONITORING ACTIVE" scanline className="min-h-[320px] flex-1 overflow-hidden">

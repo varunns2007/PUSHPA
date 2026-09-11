@@ -2,6 +2,7 @@ import {
   LayoutGrid,
   TreePine,
   Satellite,
+  Radar,
   ShieldAlert,
   FileBarChart,
   Settings as SettingsIcon,
@@ -10,6 +11,7 @@ import {
 
 export type PageId =
   | "overview"
+  | "range-detector"
   | "forest-explorer"
   | "satellite-compare"
   | "threat-intel"
@@ -22,12 +24,11 @@ export interface NavItem {
   icon: LucideIcon;
 }
 
-// Consolidated down to 6 sections (from 15) — each one groups related views
-// behind tabs instead of a separate nav entry per screen.
 export const NAV_ITEMS: NavItem[] = [
   { id: "overview", label: "Overview", icon: LayoutGrid },
-  { id: "forest-explorer", label: "Forest Explorer", icon: TreePine },
+  { id: "range-detector", label: "Range Scanner", icon: Radar },
   { id: "satellite-compare", label: "Satellite Compare", icon: Satellite },
+  { id: "forest-explorer", label: "Forest Explorer", icon: TreePine },
   { id: "threat-intel", label: "Threat Intel", icon: ShieldAlert },
   { id: "reports-analytics", label: "Reports & Analytics", icon: FileBarChart },
   { id: "settings", label: "Settings", icon: SettingsIcon },
