@@ -1,14 +1,22 @@
 fastapi==0.115.0
 uvicorn[standard]==0.30.6
-pydantic==2.9.2
+pydantic>=2.9.2
 numpy==1.26.4
 scipy==1.13.1
 sse-starlette==2.1.3
 
-# --- Real satellite feed + daily/periodic watch (see app/satellite/live_client.py,
-# app/scheduler/watch.py). Only exercised when USE_LIVE_SATELLITE=1 in .env —
-# the app runs fine without them installed if you stay in demo mode. ---
+# Real-Time Multi-Agent Interdiction Engine
+langgraph>=0.2.0
+langchain-core>=0.3.0
+shapely>=2.0.0
+geopy>=2.4.0
+requests>=2.31.0
+jinja2>=3.1.4
+pytest>=8.0.0
+
+# Live satellite feed dependencies
 pystac-client==0.8.5
 planetary-computer==1.0.0
 rasterio==1.3.10
 apscheduler==3.10.4
+

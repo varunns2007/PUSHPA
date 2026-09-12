@@ -8,6 +8,7 @@ import { ComparisonProvider } from "./state/ComparisonContext";
 import type { PageId } from "./nav";
 
 import Overview from "./pages/Overview";
+import MultiAgentInterdictionPage from "./pages/MultiAgentInterdictionPage";
 import ForestExplorer from "./pages/ForestExplorer";
 import SatelliteCompare from "./pages/SatelliteCompare";
 import RangeDeforestationDetector from "./pages/RangeDeforestationDetector";
@@ -32,6 +33,7 @@ export default function App() {
               <AnimatePresence mode="wait">
                 <PageTransition key={page}>
                   {page === "overview" && <Overview onNavigate={setPage} />}
+                  {page === "multi-agent" && <MultiAgentInterdictionPage />}
                   {page === "range-detector" && <RangeDeforestationDetector onNavigate={setPage} />}
                   {page === "forest-explorer" && <ForestExplorer />}
                   {page === "satellite-compare" && <SatelliteCompare onNavigate={setPage} />}
@@ -47,3 +49,4 @@ export default function App() {
     </ComparisonProvider>
   );
 }
+

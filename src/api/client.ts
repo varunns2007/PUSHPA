@@ -136,7 +136,28 @@ export function subscribeAlerts(onAlert: (alert: any) => void): () => void {
   }
 }
 
-// --- Police station routing + Convoy Correlation Engine -------------------
+// --- Multi-Agent AI Interdiction & Police Dispatch ------------------------
+export async function ingestTelemetry(payload: {
+  vehicle_id: string;
+  timestamp?: string;
+  lat: number;
+  lng: number;
+  heading_deg?: number;
+  speed_kmh?: number;
+  cargo_weight_kg?: number;
+  declared_species?: string;
+  source?: string;
+}) {
+  return post<any>("/api/telemetry/ingest", payload);
+}
+
+export async function getPoliceDispatchLogs() {
+  return request<{ count: number; dispatches: any[] }>("/api/police-stations/dispatch-log");
+}
+
+export async function getPoliceStations() {
+  return request<{ count: number; police_stations: any[]; strategic_chokepoints: any[] }>("/api/police-stations/list");
+}
 
 export async function listPoliceStations(zoneId?: string) {
   return request<{ stations: any[] }>(`/api/police-stations${zoneId ? `?zone_id=${zoneId}` : ""}`);
@@ -158,3 +179,38 @@ export async function getConvoySignatures() {
 export async function getVehicleHistory(vehicleId: string) {
   return request<{ vehicle_id: string; history: any[] }>(`/api/vehicles/${vehicleId}/history`);
 }
+
+export const api = {
+  checkHealth,
+  getForests,
+  getNdvi,
+  compareNdvi,
+  detectChanges,
+  processChange: async (body: any) => {
+    const res = await detectChanges(body.forest_id || "zone-1", body.date_before, body.date_after);
+    return res.ok ? res.data : null;
+  },
+  listChanges,
+  listVehicles,
+  simulateVehicleTick,
+  listPermits,
+  getPermit,
+  listRisk,
+  getRisk,
+  listAlerts,
+  listIncidents,
+  runDemoScenario,
+  subscribeAlerts,
+  compareSatellitePlain,
+  getWatchStatus,
+  getWatchHistory,
+  ingestTelemetry,
+  getPoliceDispatchLogs,
+  getPoliceStations,
+  listPoliceStations,
+  nearbyPoliceStations,
+  policeDispatchLog,
+  getConvoySignatures,
+  getVehicleHistory,
+};
+

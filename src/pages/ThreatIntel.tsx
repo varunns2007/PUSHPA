@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import TabBar from "../components/Layout/TabBar";
+import MultiAgentInterdictionPage from "./MultiAgentInterdictionPage";
 import Hotspots from "./Hotspots";
 import RiskAnalyticsPage from "./RiskAnalyticsPage";
 import VehicleMonitor from "./VehicleMonitor";
@@ -9,6 +10,7 @@ import HistoricalIncidentsPage from "./HistoricalIncidentsPage";
 import PoliceDispatch from "./PoliceDispatch";
 
 const TABS = [
+  { id: "agents", label: "🤖 Multi-Agent Interdiction" },
   { id: "hotspots", label: "Hotspots" },
   { id: "risk", label: "Risk Score" },
   { id: "vehicles", label: "Vehicles" },
@@ -18,7 +20,7 @@ const TABS = [
 ];
 
 export default function ThreatIntel() {
-  const [tab, setTab] = useState("hotspots");
+  const [tab, setTab] = useState("agents");
 
   return (
     <div className="flex h-full flex-col">
@@ -33,6 +35,7 @@ export default function ThreatIntel() {
             transition={{ duration: 0.3 }}
             className="h-full"
           >
+            {tab === "agents" && <MultiAgentInterdictionPage />}
             {tab === "hotspots" && <Hotspots />}
             {tab === "risk" && <RiskAnalyticsPage />}
             {tab === "vehicles" && <VehicleMonitor />}
@@ -45,3 +48,4 @@ export default function ThreatIntel() {
     </div>
   );
 }
+

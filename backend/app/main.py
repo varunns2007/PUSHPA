@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api import (
+    interdiction,
     routes_alerts,
     routes_changes,
     routes_convoy,
@@ -28,7 +29,7 @@ app = FastAPI(
         "app/satellite/sentinel_client.py for where to wire in real "
         "Copernicus / vehicle-telemetry / permit-registry integrations."
     ),
-    version="0.1.0",
+    version="0.2.0",
 )
 
 # Wide-open CORS for local hackathon demo use. Restrict this before any
@@ -40,6 +41,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(interdiction.router)
 app.include_router(routes_forests.router)
 app.include_router(routes_satellite.router)
 app.include_router(routes_changes.router)
@@ -68,6 +70,7 @@ def _on_startup():
 def _on_shutdown():
     if _watch_enabled:
         stop_scheduler()
+
 
 
 @app.get("/api/health")
